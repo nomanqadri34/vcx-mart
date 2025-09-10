@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/* Scrollbar hide utility */
+@layer utilities {
+    .scrollbar-hide {
+        /* IE and Edge */
+        -ms-overflow-style: none;
+        /* Firefox */
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        /* Safari and Chrome */
+        display: none;
+    }
+}
+
+/* Custom Saffron Color Palette */
+:root {
+    --color-saffron-50: #fef7ed;
+    --color-saffron-100: #fdecd3;
+    --color-saffron-200: #fbd5a5;
+    --color-saffron-300: #f8b86d;
+    --color-saffron-400: #f59332;
+    --color-saffron-500: #f27a0a;
+    --color-saffron-600: #e35d0a;
+    --color-saffron-700: #bc4508;
+    --color-saffron-800: #95370c;
+    --color-saffron-900: #792f0e;
+}
+
+/* Custom utility classes for saffron colors */
+.bg-saffron-50 {
+    background-color: var(--color-saffron-50);
+}
+
+.bg-saffron-100 {
+    background-color: var(--color-saffron-100);
+}
+
+.bg-saffron-200 {
+    background-color: var(--color-saffron-200);
+}
+
+.bg-saffron-300 {
+    background-color: var(--color-saffron-300);
+}
+
+.bg-saffron-400 {
+    background-color: var(--color-saffron-400);
+}
+
+.bg-saffron-500 {
+    background-color: var(--color-saffron-500);
+}
+
+.bg-saffron-600 {
+    background-color: var(--color-saffron-600);
+}
+
+.bg-saffron-700 {
+    background-color: var(--color-saffron-700);
+}
+
+.bg-saffron-800 {
+    background-color: var(--color-saffron-800);
+}
+
+.bg-saffron-900 {
+    background-color: var(--color-saffron-900);
+}
+
+.text-saffron-50 {
+    color: var(--color-saffron-50);
+}
+
+.text-saffron-100 {
+    color: var(--color-saffron-100);
+}
+
+.text-saffron-200 {
+    color: var(--color-saffron-200);
+}
+
+.text-saffron-300 {
+    color: var(--color-saffron-300);
+}
+
+.text-saffron-400 {
+    color: var(--color-saffron-400);
+}
+
+.text-saffron-500 {
+    color: var(--color-saffron-500);
+}
+
+.text-saffron-600 {
+    color: var(--color-saffron-600);
+}
+
+.text-saffron-700 {
+    color: var(--color-saffron-700);
+}
+
+.text-saffron-800 {
+    color: var(--color-saffron-800);
+}
+
+.text-saffron-900 {
+    color: var(--color-saffron-900);
+}
+
+.border-saffron-50 {
+    border-color: var(--color-saffron-50);
+}
+
+.border-saffron-100 {
+    border-color: var(--color-saffron-100);
+}
+
+.border-saffron-200 {
+    border-color: var(--color-saffron-200);
+}
+
+.border-saffron-300 {
+    border-color: var(--color-saffron-300);
+}
+
+.border-saffron-400 {
+    border-color: var(--color-saffron-400);
+}
+
+.border-saffron-500 {
+    border-color: var(--color-saffron-500);
+}
+
+.border-saffron-600 {
+    border-color: var(--color-saffron-600);
+}
+
+.border-saffron-700 {
+    border-color: var(--color-saffron-700);
+}
+
+.border-saffron-800 {
+    border-color: var(--color-saffron-800);
+}
+
+.border-saffron-900 {
+    border-color: var(--color-saffron-900);
+}
+
+.ring-saffron-500 {
+    --tw-ring-color: var(--color-saffron-500);
+}
+
+.focus\:ring-saffron-500:focus {
+    --tw-ring-color: var(--color-saffron-500);
+}
+
+.from-saffron-50 {
+    --tw-gradient-from: var(--color-saffron-50);
+}
+
+.from-saffron-100 {
+    --tw-gradient-from: var(--color-saffron-100);
+}
+
+.from-saffron-200 {
+    --tw-gradient-from: var(--color-saffron-200);
+}
+
+.from-saffron-300 {
+    --tw-gradient-from: var(--color-saffron-300);
+}
+
+.from-saffron-400 {
+    --tw-gradient-from: var(--color-saffron-400);
+}
+
+.from-saffron-500 {
+    --tw-gradient-from: var(--color-saffron-500);
+}
+
+.from-saffron-600 {
+    --tw-gradient-from: var(--color-saffron-600);
+}
+
+.from-saffron-700 {
+    --tw-gradient-from: var(--color-saffron-700);
+}
+
+.from-saffron-800 {
+    --tw-gradient-from: var(--color-saffron-800);
+}
+
+.from-saffron-900 {
+    --tw-gradient-from: var(--color-saffron-900);
+}
+
+.to-saffron-50 {
+    --tw-gradient-to: var(--color-saffron-50);
+}
+
+.to-saffron-100 {
+    --tw-gradient-to: var(--color-saffron-100);
+}
+
+.to-saffron-200 {
+    --tw-gradient-to: var(--color-saffron-200);
+}
+
+.to-saffron-300 {
+    --tw-gradient-to: var(--color-saffron-300);
+}
+
+.to-saffron-400 {
+    --tw-gradient-to: var(--color-saffron-400);
+}
+
+.to-saffron-500 {
+    --tw-gradient-to: var(--color-saffron-500);
+}
+
+.to-saffron-600 {
+    --tw-gradient-to: var(--color-saffron-600);
+}
+
+.to-saffron-700 {
+    --tw-gradient-to: var(--color-saffron-700);
+}
+
+.to-saffron-800 {
+    --tw-gradient-to: var(--color-saffron-800);
+}
+
+.to-saffron-900 {
+    --tw-gradient-to: var(--color-saffron-900);
+}
+
+.via-saffron-400 {
+    --tw-gradient-stops: var(--tw-gradient-from), var(--color-saffron-400), var(--tw-gradient-to);
+}
+
+.hover\:from-saffron-600:hover {
+    --tw-gradient-from: var(--color-saffron-600);
+}
+
+.hover\:to-saffron-700:hover {
+    --tw-gradient-to: var(--color-saffron-700);
+}
+
+/* Reveal Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

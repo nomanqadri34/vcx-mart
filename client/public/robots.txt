@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://vcxmart.com/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /user/
+Disallow: /seller/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /login/
+Disallow: /register/
+Disallow: /reset-password/
+Disallow: /verify-email/
+
+# Allow important pages
+Allow: /products/
+Allow: /categories/
+Allow: /search/
+Allow: /about/
+Allow: /contact/
+Allow: /help/
+Allow: /privacy/
+Allow: /terms/
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

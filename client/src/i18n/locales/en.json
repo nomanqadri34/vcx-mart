@@ -1,0 +1,74 @@
+{
+  "seller": {
+    "application": {
+      "title": "Become a VCX MART Seller",
+      "subtitle": "Join our marketplace and start selling to millions of customers",
+      "steps": {
+        "businessInfo": "Business Information",
+        "documents": "Documents",
+        "bankDetails": "Bank Details",
+        "reviewSubmit": "Review & Submit"
+      },
+      "businessName": "Business Name",
+      "businessType": "Business Type",
+      "contactPerson": "Contact Person Name",
+      "phone": "Phone Number",
+      "businessAddress": "Business Address",
+      "categories": "Product Categories (Select all that apply)",
+      "salesVolume": "Expected Monthly Sales Volume",
+      "panCard": "PAN Card",
+      "aadhaarCard": "Aadhaar Card",
+      "businessCertificate": "Business Registration Certificate",
+      "gstCertificate": "GST Registration Certificate (if applicable)",
+      "bankStatement": "Bank Statement (Last 3 months)",
+      "bankName": "Bank Name",
+      "accountHolder": "Account Holder Name",
+      "accountNumber": "Account Number",
+      "ifscCode": "IFSC Code",
+      "accountType": "Account Type",
+      "branchAddress": "Branch Address",
+      "termsAccepted": "I agree to the Terms and Conditions and Seller Policy",
+      "required": "*",
+      "placeholders": {
+        "businessName": "Enter your business name",
+        "selectBusinessType": "Select business type",
+        "fullName": "Full name",
+        "phone": "10-digit phone number",
+        "businessAddress": "Complete business address with pincode",
+        "selectVolume": "Select expected volume",
+        "bankName": "Enter bank name",
+        "accountHolder": "As per bank records",
+        "accountNumber": "Bank account number",
+        "ifscCode": "11-character IFSC code",
+        "selectAccountType": "Select account type",
+        "branchAddress": "Bank branch address"
+      },
+      "buttons": {
+        "previous": "Previous",
+        "next": "Next",
+        "submit": "Submit Application",
+        "submitting": "Submitting..."
+      },
+      "validation": {
+        "businessNameRequired": "Business name is required",
+        "businessTypeRequired": "Business type is required",
+        "contactPersonRequired": "Contact person name is required",
+        "phoneRequired": "Phone number is required",
+        "phoneInvalid": "Please enter a valid 10-digit phone number",
+        "businessAddressRequired": "Business address is required",
+        "categoriesRequired": "Select at least one category",
+        "panCardRequired": "PAN card is required",
+        "aadhaarCardRequired": "Aadhaar card is required",
+        "bankStatementRequired": "Bank statement is required",
+        "bankNameRequired": "Bank name is required",
+        "accountHolderRequired": "Account holder name is required",
+        "accountNumberRequired": "Account number is required",
+        "ifscCodeRequired": "IFSC code is required",
+        "ifscCodeInvalid": "Please enter a valid IFSC code",
+        "accountTypeRequired": "Account type is required",
+        "termsRequired": "You must accept the terms and conditions",
+        "fillRequired": "Please fill all required fields before proceeding"
+      }
+    }
+  }
+}
