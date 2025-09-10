@@ -59,7 +59,8 @@ app.use(cors({
     // Allowed production domains
     const allowedOrigins = [
       'https://vcxmart.com',
-      'https://vcxmartapp.netlify.app'
+      'https://vcxmartapp.netlify.app',
+      'https://www.vcxmart.com'
     ];
 
     // Allow localhost IPv4 & IPv6 for dev/testing
