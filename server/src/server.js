@@ -58,7 +58,7 @@ app.use(cors({
 
     if (process.env.NODE_ENV === 'production') {
       // Production: only allow specific domains
-      const allowedOrigins = ['https://yourdomain.com'];
+      const allowedOrigins = ['https://vcxmart.com','https://vcxmartapp.netlify.app'];
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
