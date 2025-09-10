@@ -52,40 +52,36 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: function (origin, callback) {
-    // Log origin and environment for debugging
-    console.log(`CORS Check: Origin = ${origin}, NODE_ENV = ${process.env.NODE_ENV}`);
-
-    // Allow requests with no origin (like mobile apps or curl requests)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, curl)
     if (!origin) return callback(null, true);
 
-    // Determine if in production environment
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Allowed production domains
+    const allowedOrigins = [
+      'https://vcxmart.com',
+      'https://vcxmartapp.netlify.app'
+    ];
 
-    if (isProduction) {
-      // Production: only allow specific domains
-      const allowedOrigins = ['https://vcxmart.com','https://vcxmartapp.netlify.app'];
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        console.warn(`CORS Blocked (Production): Origin ${origin} not in allowed list.`);
-        callback(new Error('Not allowed by CORS'));
-      }
+    // Allow localhost IPv4 & IPv6 for dev/testing
+    const localOrigins = [
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://[::1]:3000'  // IPv6 localhost
+    ];
+
+    if (allowedOrigins.includes(origin) || localOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      // Development: allow localhost with any port
-      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-        callback(null, true);
-      } else {
-        console.warn(`CORS Blocked (Development): Origin ${origin} not allowed in non-production environment.`);
-        callback(new Error('Not allowed by CORS'));
-      }
+      console.warn(`CORS blocked: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  optionsSuccessStatus: 200,
 }));
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
