@@ -53,15 +53,22 @@ app.use(helmet({
 // CORS configuration
 app.use(cors({
   origin: function (origin, callback) {
+    // Log origin and environment for debugging
+    console.log(`CORS Check: Origin = ${origin}, NODE_ENV = ${process.env.NODE_ENV}`);
+
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (process.env.NODE_ENV === 'production') {
+    // Determine if in production environment
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction) {
       // Production: only allow specific domains
       const allowedOrigins = ['https://vcxmart.com','https://vcxmartapp.netlify.app'];
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
+        console.warn(`CORS Blocked (Production): Origin ${origin} not in allowed list.`);
         callback(new Error('Not allowed by CORS'));
       }
     } else {
@@ -69,6 +76,7 @@ app.use(cors({
       if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
         callback(null, true);
       } else {
+        console.warn(`CORS Blocked (Development): Origin ${origin} not allowed in non-production environment.`);
         callback(new Error('Not allowed by CORS'));
       }
     }
@@ -94,14 +102,12 @@ app.use((req, res, next) => {
 // Compression middleware
 app.use(compression());
 
-// Logging middleware - Only log errors and important info
+// Logging middleware - Log all requests for debugging, especially errors
 app.use(morgan('combined', {
   stream: {
     write: message => {
-      // Only log important messages, filter out cart API calls
-      if (!message.includes('/api/v1/cart') && !message.includes('Not Found')) {
-        logger.info(message.trim());
-      }
+      // Log all messages for now to capture potential 500 errors
+      logger.info(message.trim());
     }
   }
 }));
