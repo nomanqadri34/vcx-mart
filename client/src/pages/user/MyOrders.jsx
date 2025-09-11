@@ -178,7 +178,7 @@ const MyOrders = () => {
         {/* Filter Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex flex-wrap gap-2 sm:space-x-8 sm:gap-0">
               {[
                 { key: 'all', label: 'All Orders' },
                 { key: 'pending', label: 'Pending' },
@@ -193,7 +193,7 @@ const MyOrders = () => {
                     setFilter(tab.key);
                     setCurrentPage(1);
                   }}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-2 px-3 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                     filter === tab.key
                       ? 'border-saffron-500 text-saffron-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -226,14 +226,14 @@ const MyOrders = () => {
             {orders.map((order) => (
               <div key={order._id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {/* Order Header */}
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-base sm:text-lg font-medium text-gray-900">
                           Order #{order.orderNumber}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500">
                           Placed on {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -244,34 +244,34 @@ const MyOrders = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-gray-900">₹{order.total}</p>
-                      <p className="text-sm text-gray-500">{order.items.length} item(s)</p>
+                    <div className="text-left sm:text-right">
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">₹{order.total}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">{order.items.length} item(s)</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Order Items */}
-                <div className="px-6 py-4">
+                <div className="px-4 sm:px-6 py-4">
                   <div className="space-y-4">
                     {order.items.slice(0, 2).map((item, index) => (
-                      <div key={index} className="flex items-center space-x-4">
+                      <div key={index} className="flex items-start sm:items-center space-x-3 sm:space-x-4">
                         <div className="flex-shrink-0">
                           <img
                             src={item.image || '/placeholder-product.jpg'}
                             alt={item.name}
-                            className="h-16 w-16 rounded-lg object-cover"
+                            className="h-12 w-12 sm:h-16 sm:w-16 rounded-lg object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <h4 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-2">
                             {item.name}
                           </h4>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs sm:text-sm text-gray-500 mt-1">
                             Qty: {item.quantity} × ₹{item.price}
                           </p>
                           {item.variants && Object.keys(item.variants).length > 0 && (
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 mt-1">
                               {Object.entries(item.variants)
                                 .filter(([_, value]) => value)
                                 .map(([key, value]) => `${key}: ${value}`)
@@ -279,13 +279,13 @@ const MyOrders = () => {
                             </p>
                           )}
                         </div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900 flex-shrink-0">
                           ₹{item.subtotal}
                         </div>
                       </div>
                     ))}
                     {order.items.length > 2 && (
-                      <p className="text-sm text-gray-500 text-center">
+                      <p className="text-xs sm:text-sm text-gray-500 text-center">
                         +{order.items.length - 2} more item(s)
                       </p>
                     )}
@@ -293,49 +293,54 @@ const MyOrders = () => {
                 </div>
 
                 {/* Order Actions */}
-                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex space-x-3">
+                <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                    <div className="flex flex-wrap gap-2 sm:space-x-3">
                       <Link
                         to={`/orders/${order._id}`}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                       >
-                        <EyeIcon className="h-4 w-4 mr-2" />
-                        View Details
+                        <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">Details</span>
                       </Link>
                       {order.shipping?.trackingNumber && (
                         <Link
                           to={`/orders/${order._id}/track`}
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                         >
-                          <TruckIcon className="h-4 w-4 mr-2" />
-                          Track Order
+                          <TruckIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Track Order</span>
+                          <span className="sm:hidden">Track</span>
                         </Link>
                       )}
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex flex-wrap gap-2 sm:space-x-3">
                       {canCancelOrder(order) && (
                         <button
                           onClick={() => handleCancelOrder(order._id)}
-                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
                         >
-                          <XCircleIcon className="h-4 w-4 mr-2" />
-                          Cancel Order
+                          <XCircleIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Cancel Order</span>
+                          <span className="sm:hidden">Cancel</span>
                         </button>
                       )}
                       {order.status === 'delivered' && (
                         <>
-                          <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            Return/Exchange
+                          <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <span className="hidden sm:inline">Return/Exchange</span>
+                            <span className="sm:hidden">Return</span>
                           </button>
-                          {order.items.map((item, idx) => (
+                          {order.items.slice(0, 1).map((item, idx) => (
                             <button
                               key={idx}
                               onClick={() => openReviewModal(item)}
-                              className="inline-flex items-center px-3 py-2 border border-saffron-300 shadow-sm text-sm leading-4 font-medium rounded-md text-saffron-700 bg-white hover:bg-saffron-50"
+                              className="inline-flex items-center px-3 py-2 border border-saffron-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-saffron-700 bg-white hover:bg-saffron-50"
                             >
-                              <StarIcon className="h-4 w-4 mr-2" />
-                              Review {item.name.substring(0, 20)}...
+                              <StarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Review</span>
+                              <span className="sm:hidden">★</span>
                             </button>
                           ))}
                         </>
@@ -415,16 +420,16 @@ const MyOrders = () => {
         {/* Review Modal */}
         {showReviewModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+            <div className="bg-white rounded-lg max-w-md w-full mx-4 p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-base sm:text-lg font-semibold mb-4">Write a Review</h3>
               
               {selectedProduct && (
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">Product: {selectedProduct.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">Product: {selectedProduct.name}</p>
                   
                   {/* Rating */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Rating</label>
                     <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -433,9 +438,9 @@ const MyOrders = () => {
                           className="focus:outline-none"
                         >
                           {star <= reviewData.rating ? (
-                            <StarSolidIcon className="h-6 w-6 text-yellow-400" />
+                            <StarSolidIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
                           ) : (
-                            <StarIcon className="h-6 w-6 text-gray-300" />
+                            <StarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-300" />
                           )}
                         </button>
                       ))}
@@ -444,21 +449,21 @@ const MyOrders = () => {
                   
                   {/* Comment */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Review</label>
                     <textarea
                       value={reviewData.comment}
                       onChange={(e) => setReviewData({...reviewData, comment: e.target.value})}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                       placeholder="Write your review here..."
                     />
                   </div>
                   
                   {/* Buttons */}
-                  <div className="flex space-x-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:space-x-3">
                     <button
                       onClick={handleReviewSubmit}
-                      className="flex-1 bg-saffron-600 text-white py-2 px-4 rounded-md hover:bg-saffron-700 transition-colors"
+                      className="w-full sm:flex-1 bg-saffron-600 text-white py-2 px-4 rounded-md hover:bg-saffron-700 transition-colors text-sm"
                     >
                       Submit Review
                     </button>
@@ -468,7 +473,7 @@ const MyOrders = () => {
                         setSelectedProduct(null);
                         setReviewData({ rating: 5, comment: '' });
                       }}
-                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                      className="w-full sm:flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors text-sm"
                     >
                       Cancel
                     </button>
