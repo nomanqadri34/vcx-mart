@@ -41,9 +41,6 @@ import GrievancePolicyPage from "./pages/legal/GrievancePolicyPage";
 import SecurityPolicyPage from "./pages/legal/SecurityPolicyPage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 import IPPolicyPage from "./pages/legal/IPPolicyPage";
-import SecurityPolicyPage from "./pages/legal/SecurityPolicyPage";
-import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
-import IPPolicyPage from "./pages/legal/IPPolicyPage";
 import GoKwikCheckoutPage from "./pages/GoKwikCheckoutPage";
 import RazorpayCheckoutPage from "./pages/RazorpayCheckoutPage";
 import CartPage from "./pages/CartPage";
@@ -146,9 +143,6 @@ function App() {
                         <Route path="/refund-policy" element={<RefundPolicyPage />} />
                         <Route path="/seller-policy" element={<SellerPolicyPage />} />
                         <Route path="/grievance-policy" element={<GrievancePolicyPage />} />
-                        <Route path="/security-policy" element={<SecurityPolicyPage />} />
-                        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-                        <Route path="/ip-policy" element={<IPPolicyPage />} />
                         <Route path="/security-policy" element={<SecurityPolicyPage />} />
                         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
                         <Route path="/ip-policy" element={<IPPolicyPage />} />
