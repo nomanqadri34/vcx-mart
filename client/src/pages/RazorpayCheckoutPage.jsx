@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 import {
     ArrowLeftIcon,
     TagIcon,
@@ -14,7 +15,6 @@ import {
     CreditCardIcon
 } from '@heroicons/react/24/outline';
 import { ChevronDownIcon as ChevronDownSolid } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
 import { cartAPI } from '../services/api';
 
 const RazorpayCheckoutPage = () => {
@@ -125,20 +125,67 @@ const RazorpayCheckoutPage = () => {
         setProcessingPayment(true);
 
         try {
+            // Validate cart items first
+            if (!items || !Array.isArray(items) || items.length === 0) {
+                toast.error('Your cart is empty');
+                throw new Error('Cart is empty');
+            }
+
+            // Double check items are properly structured
+            const validItems = items.every(item => {
+                const isValid = item &&
+                    item.productId &&
+                    item.quantity &&
+                    item.price &&
+                    Number(item.quantity) > 0 &&
+                    Number(item.price) > 0;
+
+                if (!isValid) {
+                    console.error('Invalid item:', item);
+                }
+                return isValid;
+            });
+
+            if (!validItems) {
+                console.error('Invalid cart items:', items);
+                throw new Error('Invalid items in cart');
+            }
+
+            // Format addresses
             const shippingAddress = {
-                firstName: customerInfo.firstName,
-                lastName: customerInfo.lastName,
-                email: customerInfo.email,
-                phone: customerInfo.phone,
-                address: `${customerInfo.address}, ${customerInfo.landmark}`.trim().replace(/,$/, ''),
-                city: customerInfo.city,
-                state: customerInfo.state,
-                pincode: customerInfo.pincode,
-                country: customerInfo.country
+                firstName: customerInfo.firstName?.trim(),
+                lastName: customerInfo.lastName?.trim(),
+                email: customerInfo.email?.trim(),
+                phone: customerInfo.phone?.toString().trim(),
+                address: customerInfo.address?.trim(),
+                landmark: customerInfo.landmark?.trim(),
+                city: customerInfo.city?.trim(),
+                state: customerInfo.state?.trim(),
+                pincode: customerInfo.pincode?.toString().trim(),
+                country: customerInfo.country || 'India'
             };
 
-            // Create order on backend
-            const checkoutResponse = await cartAPI.checkout(shippingAddress, null);
+            // Create order on backend with complete data
+            const checkoutData = {
+                shippingAddress,
+                billingAddress: shippingAddress, // Using shipping address as billing address
+                order: {
+                    items: items.map(item => ({
+                        productId: item.productId,
+                        quantity: Number(item.quantity),
+                        price: Number(item.price),
+                        variants: item.variants || {}
+                    })),
+                    total: Number(total),
+                    subtotal: Number(subtotal),
+                    tax: Number(tax),
+                    discount: Number(discount),
+                    couponCode: appliedCoupon?.code
+                }
+            };
+
+            console.log('Sending checkout data:', checkoutData);
+            const checkoutResponse = await cartAPI.checkout(checkoutData);
 
             if (!checkoutResponse.success) {
                 throw new Error(checkoutResponse.error || 'Failed to create order');
@@ -199,7 +246,7 @@ const RazorpayCheckoutPage = () => {
                         // For now, skip verification and go directly to success
                         // TODO: Implement proper payment verification
                         toast.success('Payment successful!');
-                        
+
                         // Generate invoice data
                         const invoiceData = {
                             orderId: order._id,
@@ -213,10 +260,10 @@ const RazorpayCheckoutPage = () => {
                             tax: tax,
                             subtotal: subtotal
                         };
-                        
+
                         // Store invoice data in localStorage for success page
                         localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
-                        
+
                         navigate('/checkout/success', {
                             state: {
                                 orderId: order._id,
@@ -248,7 +295,23 @@ const RazorpayCheckoutPage = () => {
         }
     };
 
-    if (items.length === 0) {
+    useEffect(() => {
+        if (!loading && (!items || items.length === 0)) {
+            toast.error('Your cart is empty');
+            navigate('/cart');
+            return;
+        }
+    }, [items, loading, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+        );
+    }
+
+    if (!items || items.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -444,10 +507,10 @@ const RazorpayCheckoutPage = () => {
 
                                 <button
                                     onClick={validateAndProceed}
-                                    className="w-full bg-gray-800 text-white py-4 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center"
+                                    className="w-auto mx-auto px-6 bg-gray-800 text-white py-2 rounded-md text-sm font-medium hover:bg-gray-900 transition-colors flex items-center justify-center"
                                 >
                                     Continue
-                                    <ArrowLeftIcon className="h-5 w-5 ml-2 transform rotate-180" />
+                                    <ArrowLeftIcon className="h-4 w-4 ml-2 transform rotate-180" />
                                 </button>
                             </div>
                         ) : (
@@ -473,16 +536,16 @@ const RazorpayCheckoutPage = () => {
                                     <button
                                         onClick={handleRazorpayPayment}
                                         disabled={processingPayment}
-                                        className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50"
+                                        className="w-auto mx-auto px-6 bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50"
                                     >
                                         {processingPayment ? (
                                             <>
-                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                                 Processing...
                                             </>
                                         ) : (
                                             <>
-                                                <LockClosedIcon className="h-5 w-5 mr-2" />
+                                                <LockClosedIcon className="h-4 w-4 mr-2" />
                                                 Pay ₹{total.toLocaleString()}
                                             </>
                                         )}

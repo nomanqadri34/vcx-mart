@@ -3,12 +3,11 @@ import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://vcx-mart.onrender.com/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
     headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
     },
-    withCredentials: true, // Enable cookies for session management
-    // Removed timeout: 30000 to prevent timeout errors
+    withCredentials: true
 });
 
 // Add request interceptor to include auth token
@@ -47,12 +46,10 @@ api.interceptors.response.use(
                     return api(originalRequest);
                 }
             } catch (refreshError) {
-                // Refresh token failed, redirect to login
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
                 localStorage.removeItem('user');
 
-                // Only redirect if not already on login page
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }
@@ -78,14 +75,23 @@ api.interceptors.response.use(
 const apiResponse = async (apiCall) => {
     try {
         const response = await apiCall();
-        console.log('apiResponse: Raw response:', response);
-        console.log('apiResponse: Response data:', response.data);
-        return response.data; // Return the server response directly
+        return response.data;
     } catch (error) {
         console.error('API Error:', error);
         const errorMessage = error.response?.data?.error?.message || 'An error occurred';
         return { success: false, error: errorMessage };
     }
+};
+
+// Cart API functions
+export const cartAPI = {
+    testSession: () => apiResponse(() => api.get('/cart/test')),
+    getCart: () => apiResponse(() => api.get('/cart')),
+    addToCart: (productId, quantity, variants) => apiResponse(() => api.post('/cart/add', { productId, quantity, variants })),
+    updateCartItem: (productId, quantity, variants) => apiResponse(() => api.put('/cart/update', { productId, quantity, variants })),
+    removeFromCart: (productId, variants) => apiResponse(() => api.delete('/cart/remove', { data: { productId, variants } })),
+    clearCart: () => apiResponse(() => api.post('/cart/clear')),
+    checkout: (checkoutData) => apiResponse(() => api.post('/cart/checkout', checkoutData))
 };
 
 // Auth API functions
@@ -126,11 +132,8 @@ export const userAPI = {
 
 // Seller API functions
 export const sellerAPI = {
-    // Application management
     applyAsSeller: (applicationData) => api.post('/seller/apply', applicationData),
     getApplicationStatus: () => api.get('/seller/application/status'),
-
-    // Dashboard and products
     getDashboard: () => api.get('/seller/dashboard'),
     getProducts: (params) => api.get('/seller/products', { params }),
     createProduct: (productData) => api.post('/seller/products', productData),
@@ -140,8 +143,6 @@ export const sellerAPI = {
     updateOrderStatus: (orderId, statusData) => api.put(`/seller/orders/${orderId}/status`, statusData),
     getAnalytics: (params) => api.get('/seller/analytics', { params }),
     getEarnings: (params) => api.get('/seller/earnings', { params }),
-
-    // Admin functions for seller applications
     getApplications: (params) => api.get('/seller/applications', { params }),
     getApplicationStats: () => api.get('/seller/applications/stats'),
     getApplication: (applicationId) => api.get(`/seller/applications/${applicationId}`),
@@ -183,39 +184,16 @@ export const productAPI = {
     addProductReview: (productId, reviewData) => api.post(`/reviews/${productId}/reviews`, reviewData),
 };
 
-
-
-// Cart API functions
-export const cartAPI = {
-    testSession: () => apiResponse(() => api.get('/cart/test')),
-    getCart: async () => {
-        console.log('cartAPI.getCart: Making request...');
-        const response = await apiResponse(() => api.get('/cart'));
-        console.log('cartAPI.getCart: Response received:', response);
-        return response;
-    },
-    addToCart: (productId, quantity, variants) => apiResponse(() => api.post('/cart/add', { productId, quantity, variants })),
-    updateCartItem: (productId, quantity, variants) => apiResponse(() => api.put('/cart/update', { productId, quantity, variants })),
-    removeFromCart: (productId, variants) => apiResponse(() => api.delete('/cart/remove', { data: { productId, variants } })),
-    clearCart: () => apiResponse(() => api.post('/cart/clear')),
-    checkout: (shippingAddress, billingAddress) => apiResponse(() => api.post('/cart/checkout', { shippingAddress, billingAddress })),
-};
-
 // Order API functions
 export const orderAPI = {
-    // Customer order functions
     createOrder: (orderData) => api.post('/orders', orderData),
     getMyOrders: (params) => api.get('/orders/my-orders', { params }),
     getOrder: (orderId) => api.get(`/orders/${orderId}`),
     cancelOrder: (orderId, reason) => api.put(`/orders/${orderId}/cancel`, { reason }),
     trackOrder: (orderId) => api.get(`/orders/${orderId}/track`),
-    
-    // Seller order functions
     getSellerOrders: (params) => api.get('/orders/seller/my-orders', { params }),
     updateOrderStatus: (orderId, status, notes) => api.put(`/orders/${orderId}/status`, { status, notes }),
     createShipping: (orderId) => api.post(`/orders/${orderId}/ship`),
-    
-    // Admin order functions
     getAllOrders: (params) => api.get('/orders/admin/all', { params }),
     getOrderStats: (params) => api.get('/orders/admin/stats', { params }),
 };
@@ -237,8 +215,6 @@ export const notificationAPI = {
     markAllAsRead: () => api.put('/notifications/mark-all-read'),
     updatePreferences: (preferences) => api.put('/notifications/preferences', preferences),
 };
-
-
 
 // Checkout API functions
 export const checkoutAPI = {

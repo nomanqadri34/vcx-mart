@@ -115,28 +115,68 @@ const CheckoutPage = () => {
             return;
         }
 
+        if (!items || items.length === 0) {
+            toast.error('Your cart is empty');
+            return;
+        }
+
         const finalBillingAddress = billingAddress.useShippingAddress ? null : billingAddress;
 
         try {
-            await checkout(shippingAddress, finalBillingAddress, appliedCoupon?.code);
+            // Prepare addresses
+            const checkoutData = {
+                shippingAddress: {
+                    ...shippingAddress,
+                    phone: shippingAddress.phone.toString()
+                },
+                billingAddress: finalBillingAddress ? {
+                    ...finalBillingAddress,
+                    phone: finalBillingAddress.phone.toString()
+                } : null,
+                couponCode: appliedCoupon?.code || null,
+                items: items.map(item => ({
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    variants: item.variants || {}
+                }))
+            };
+
+            // Call checkout with complete data
+            const result = await checkout(
+                checkoutData.shippingAddress,
+                checkoutData.billingAddress,
+                checkoutData.couponCode
+            );
+
+            if (!result) {
+                throw new Error('Checkout failed');
+            }
         } catch (error) {
             console.error('Checkout error:', error);
-            toast.error('Failed to initiate checkout');
+            toast.error(error.message || 'Failed to initiate checkout');
         }
     };
 
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
                     <p className="text-gray-600 mb-6">Add some products to your cart before checkout</p>
-                    <button
-                        onClick={() => navigate('/products')}
-                        className="bg-saffron-600 text-white px-6 py-3 rounded-lg hover:bg-saffron-700 transition-colors"
-                    >
-                        Continue Shopping
-                    </button>
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => navigate('/products')}
+                            className="bg-saffron-600 text-white px-6 py-3 rounded-lg hover:bg-saffron-700 transition-colors"
+                        >
+                            Continue Shopping
+                        </button>
+                        <button
+                            onClick={() => navigate('/cart')}
+                            className="block w-full text-saffron-600 hover:text-saffron-700"
+                        >
+                            View Cart
+                        </button>
+                    </div>
                 </div>
             </div>
         );

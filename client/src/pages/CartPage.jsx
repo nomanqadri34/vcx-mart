@@ -23,18 +23,38 @@ const CartPage = () => {
     console.log('CartPage: Items is array?', Array.isArray(items));
     console.log('CartPage: Type of items:', typeof items);
 
-    // Memoize the loadCart callback to prevent infinite loops
-    const handleLoadCart = useCallback(() => {
-        if (isAuthenticated) {
-            console.log('CartPage: Loading cart for authenticated user');
-            loadCart();
-        }
+    // Load cart on mount and auth changes
+    useEffect(() => {
+        let isSubscribed = true;
+
+        const loadInitialCart = async () => {
+            if (isAuthenticated && isSubscribed) {
+                console.log('CartPage: Loading cart...');
+                await loadCart(true); // Force reload to ensure fresh data
+            }
+        };
+
+        loadInitialCart();
+
+        return () => {
+            isSubscribed = false;
+        };
     }, [isAuthenticated, loadCart]);
 
-    // Reload cart when component mounts or when user changes
+    // Listen for checkout completion and clear cart
     useEffect(() => {
-        handleLoadCart();
-    }, [handleLoadCart]);
+        const handleCheckoutComplete = () => {
+            console.log('Checkout completed, clearing and reloading cart...');
+            clearCart();
+            setTimeout(() => loadCart(true), 500);
+        };
+
+        window.addEventListener('checkout-complete', handleCheckoutComplete);
+        
+        return () => {
+            window.removeEventListener('checkout-complete', handleCheckoutComplete);
+        };
+    }, [loadCart, clearCart]);
 
     const handleQuantityChange = async (productId, variants, newQuantity) => {
         if (newQuantity <= 0) {

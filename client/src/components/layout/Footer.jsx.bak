@@ -135,44 +135,44 @@ const Footer = () => {
             <h4 className="text-lg font-semibold mb-4">Customer Service</h4>
             <ul className="space-y-2">
               <li>
-                <Link
-                  to="/contact"
+                <a
+                  href="#"
                   className="text-gray-300 hover:text-green-400 transition-colors"
                 >
                   Contact Us
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/help"
+                <a
+                  href="#"
                   className="text-gray-300 hover:text-green-400 transition-colors"
                 >
                   Help Center
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/refund-policy"
+                <a
+                  href="#"
                   className="text-gray-300 hover:text-green-400 transition-colors"
                 >
                   Returns & Exchanges
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/shipping-info"
+                <a
+                  href="#"
                   className="text-gray-300 hover:text-green-400 transition-colors"
                 >
                   Shipping Info
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/size-guide"
+                <a
+                  href="#"
                   className="text-gray-300 hover:text-green-400 transition-colors"
                 >
                   Size Guide
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

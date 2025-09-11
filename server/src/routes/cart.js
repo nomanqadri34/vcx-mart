@@ -354,21 +354,33 @@ router.get('/checkout', (req, res) => {
 // @access  Private
 router.post('/checkout', auth, async (req, res) => {
     try {
-        const { shippingAddress, billingAddress, order } = req.body;
+        const { shippingAddress, billingAddress, order: orderData } = req.body;
         const userId = req.user._id;
 
         // Get cart items from session or request body
+        console.log('=== CHECKOUT DEBUG ===');
+        console.log('Session cart:', req.session.cart);
+        console.log('Request orderData:', orderData);
+        console.log('Request body:', req.body);
+        
         let cartItems = req.session.cart || [];
-        if (order && order.items && order.items.length > 0) {
-            cartItems = order.items;
+        if (orderData && orderData.items && orderData.items.length > 0) {
+            cartItems = orderData.items;
+            console.log('Using cart items from request body:', cartItems);
+        } else {
+            console.log('Using cart items from session:', cartItems);
         }
 
         if (!cartItems || cartItems.length === 0) {
+            console.log('ERROR: Cart is empty - cartItems:', cartItems);
             return res.status(400).json({
                 success: false,
                 error: { message: 'Cart is empty' }
             });
         }
+        
+        console.log('Cart items found:', cartItems.length, 'items');
+        console.log('=====================');
 
         // Validate cart items and calculate totals
         let subtotal = 0;
@@ -452,8 +464,8 @@ router.post('/checkout', auth, async (req, res) => {
 
         await order.save();
 
-        // Prepare data for GoKwik
-        const orderData = {
+        // Prepare data for Razorpay
+        const razorpayOrderData = {
             orderNumber: order.orderNumber,
             total: total,
             userId: userId.toString(),
@@ -494,7 +506,7 @@ router.post('/checkout', auth, async (req, res) => {
         };
 
         // Create Razorpay order
-        const razorpayResponse = await razorpayService.createOrder(orderData);
+        const razorpayResponse = await razorpayService.createOrder(razorpayOrderData);
 
         if (!razorpayResponse.success) {
             // If Razorpay fails, update order status

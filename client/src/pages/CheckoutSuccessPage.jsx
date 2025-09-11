@@ -19,6 +19,9 @@ const CheckoutSuccessPage = () => {
     const status = searchParams.get('status');
 
     useEffect(() => {
+        // Emit checkout complete event to clear cart
+        window.dispatchEvent(new CustomEvent('checkout-complete'));
+        
         const fetchOrderDetails = async () => {
             // Check for invoice data from localStorage or location state
             const storedInvoiceData = localStorage.getItem('invoiceData');
