@@ -354,10 +354,16 @@ router.get('/checkout', (req, res) => {
 // @access  Private
 router.post('/checkout', auth, async (req, res) => {
     try {
-        const { shippingAddress, billingAddress } = req.body;
+        const { shippingAddress, billingAddress, order } = req.body;
         const userId = req.user._id;
 
-        if (!req.session.cart || req.session.cart.length === 0) {
+        // Get cart items from session or request body
+        let cartItems = req.session.cart || [];
+        if (order && order.items && order.items.length > 0) {
+            cartItems = order.items;
+        }
+
+        if (!cartItems || cartItems.length === 0) {
             return res.status(400).json({
                 success: false,
                 error: { message: 'Cart is empty' }
@@ -369,7 +375,7 @@ router.post('/checkout', auth, async (req, res) => {
         const orderItems = [];
         const sellers = new Set();
 
-        for (const item of req.session.cart) {
+        for (const item of cartItems) {
             const product = await Product.findById(item.productId);
             if (!product) {
                 return res.status(400).json({
