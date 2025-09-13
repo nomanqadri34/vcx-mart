@@ -188,6 +188,9 @@ export const CartProvider = ({ children }) => {
   const loadCart = useCallback(async (force = false) => {
     try {
       if (!isAuthenticated) {
+        // Reset cart for unauthenticated users
+        dispatch({ type: 'CLEAR_CART' });
+        localStorage.removeItem('cart');
         return;
       }
 
@@ -233,7 +236,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, []); // Empty dependency array since this function doesn't depend on any props or state
+  }, [isAuthenticated]); // Depend on isAuthenticated to reload when auth state changes
 
   // Sync localStorage cart with server when user logs in
   const syncCartWithServer = async () => {
@@ -283,23 +286,23 @@ export const CartProvider = ({ children }) => {
         // Add to localStorage for unauthenticated users
         const newItem = { productId, quantity, variants, price: 0, name: 'Product' };
         const updatedItems = [...state.items];
-        const existingIndex = updatedItems.findIndex(item => 
-          item.productId === productId && 
+        const existingIndex = updatedItems.findIndex(item =>
+          item.productId === productId &&
           JSON.stringify(item.variants) === JSON.stringify(variants)
         );
-        
+
         if (existingIndex !== -1) {
           updatedItems[existingIndex].quantity += quantity;
         } else {
           updatedItems.push(newItem);
         }
-        
+
         const cartData = {
           items: updatedItems,
           cartCount: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
           cartTotal: updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
         };
-        
+
         dispatch({ type: 'SET_CART', payload: cartData });
         saveCartToLocalStorage(cartData);
         toast.success('Product added to cart! Login to sync across devices.');
@@ -329,6 +332,8 @@ export const CartProvider = ({ children }) => {
         dispatch({ type: 'SET_CART', payload: cartData });
         // Save to localStorage
         saveCartToLocalStorage(cartData);
+        // Dispatch cart update event
+        window.dispatchEvent(new CustomEvent('cart-updated'));
         console.log('CartContext: Cart updated successfully with items:', cartData.cart.length);
         toast.success('Product added to cart!');
         return true;

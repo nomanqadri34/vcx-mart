@@ -23,71 +23,109 @@ const BecomeSeller = () => {
     }
   }, [user, navigate]);
 
+  const [isStoreOpen] = useState(false); // Will be true when store opens for buyers
+  const [showAffiliateForm, setShowAffiliateForm] = useState(false);
+
   const benefits = [
     {
       icon: CurrencyRupeeIcon,
-      title: "Earn Money",
-      description:
-        "Start earning by selling your products to millions of customers",
+      title: "No Commission Fees",
+      description: "Keep 100% of your profits - we only charge a low monthly store fee",
       color: "text-green-500",
     },
     {
       icon: ShoppingBagIcon,
-      title: "Easy Management",
-      description:
-        "Manage your inventory, orders, and customers from one dashboard",
+      title: "Direct Payments",
+      description: "Buyers pay directly to your account - no middleman delays",
       color: "text-blue-500",
     },
     {
       icon: ChartBarIcon,
-      title: "Analytics & Insights",
-      description: "Get detailed analytics to grow your business effectively",
+      title: "Profit Guarantee",
+      description: "If you don't make ₹5,000 profit in first month, get second month free",
       color: "text-purple-500",
     },
     {
       icon: UserGroupIcon,
-      title: "Large Customer Base",
-      description: "Reach thousands of potential customers across the platform",
+      title: "Early Bird Pricing",
+      description: "Register now for lifetime ₹500/month - price increases to ₹800 later",
       color: "text-saffron-500",
     },
   ];
 
   const features = [
-    "Free registration and listing",
-    "Secure payment processing",
+    "No commission on sales - keep 100% profit",
+    "Direct UPI & bank transfer payments",
+    "₹500/month store fee (vs ₹2000 on Shopify)",
+    "Lifetime early bird pricing for pre-launch sellers",
+    "Second month free if profit < ₹5,000",
     "24/7 customer support",
-    "Marketing tools and promotions",
-    "Mobile-friendly seller app",
-    "Real-time order notifications",
+  ];
+
+  const pricingPlans = [
+    {
+      title: "Early Bird Special",
+      subtitle: "Register before store opens",
+      price: "₹500",
+      period: "/month lifetime",
+      registrationFee: "₹550",
+      features: [
+        "Lifetime ₹500/month pricing",
+        "No commission on sales",
+        "Direct payment to your account",
+        "Second month free guarantee",
+        "Priority support",
+        "Early access to new features"
+      ],
+      popular: true,
+      available: !isStoreOpen
+    },
+    {
+      title: "Regular Plan",
+      subtitle: "After store opens",
+      price: "₹800",
+      period: "/month",
+      registrationFee: "₹850",
+      features: [
+        "₹800/month pricing",
+        "No commission on sales",
+        "Direct payment to your account",
+        "Standard support",
+        "All platform features"
+      ],
+      popular: false,
+      available: isStoreOpen
+    }
   ];
 
   const steps = [
     {
       step: 1,
-      title: "Apply to Sell",
-      description:
-        "Fill out the seller application form with your business details",
+      title: "Pay Registration Fee",
+      description: "Pay ₹550 (₹500 for platform + ₹50 affiliate commission)",
     },
     {
       step: 2,
-      title: "Verification",
-      description:
-        "Our team will review and verify your application within 24-48 hours",
+      title: "Complete Application",
+      description: "Fill application with business & payment details (UPI/Bank)",
     },
     {
       step: 3,
       title: "Start Selling",
-      description:
-        "Once approved, start listing products and managing your store",
+      description: "Get approved and start receiving direct payments from buyers",
     },
   ];
 
   const handleStartSelling = () => {
     if (!user) {
-      navigate("/login", { state: { from: "/seller/apply" } });
+      navigate("/login", { state: { from: "/seller/apply-new" } });
       return;
     }
-    navigate("/seller/apply");
+    navigate("/seller/apply-new");
+  };
+
+  const handleAffiliateApply = () => {
+    setShowAffiliateForm(true);
   };
 
   return (
@@ -150,17 +188,79 @@ const BecomeSeller = () => {
         </div>
       </div>
 
+      {/* Pricing Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-lg text-gray-600">
+              No hidden fees, no commissions - just a low monthly store fee
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {pricingPlans.map((plan, index) => (
+              <div key={index} className={`relative rounded-lg border-2 p-8 ${
+                plan.popular ? 'border-saffron-500 bg-saffron-50' : 'border-gray-200 bg-white'
+              }`}>
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-saffron-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                      Limited Time
+                    </span>
+                  </div>
+                )}
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.title}</h3>
+                  <p className="text-gray-600 mb-4">{plan.subtitle}</p>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-gray-600">{plan.period}</span>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Registration: {plan.registrationFee}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center">
+                        <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {plan.available && (
+                    <button
+                      onClick={handleStartSelling}
+                      className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                        plan.popular
+                          ? 'bg-saffron-500 text-white hover:bg-saffron-600'
+                          : 'bg-gray-900 text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      Get Started
+                    </button>
+                  )}
+                  {!plan.available && (
+                    <div className="text-gray-500 font-medium">Coming Soon</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Features Section */}
       <div className="py-16 bg-gradient-to-br from-saffron-50 to-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Everything You Need to Succeed
+                Why Choose Our Platform?
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                We provide all the tools and support you need to build a
-                successful online business.
+                Unlike other platforms, we don't take commissions. You keep 100% of your profits.
               </p>
               <div className="space-y-4">
                 {features.map((feature, index) => (
@@ -174,29 +274,61 @@ const BecomeSeller = () => {
             <div className="bg-white p-8 rounded-lg shadow-lg">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-saffron-500 to-green-500 rounded-full mb-4">
-                  <StarIcon className="h-8 w-8 text-white" />
+                  <CurrencyRupeeIcon className="h-8 w-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Join 10,000+ Sellers
+                  Profit Guarantee
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Be part of our growing community of successful sellers
+                  If you don't make ₹5,000 profit in your first month, get your second month completely free!
                 </p>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-saffron-500">
-                      ₹50L+
-                    </div>
-                    <div className="text-sm text-gray-600">Monthly Sales</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-500">
-                      4.8★
-                    </div>
-                    <div className="text-sm text-gray-600">Avg Rating</div>
-                  </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600 mb-1">₹500/month</div>
+                  <div className="text-sm text-gray-600">vs ₹2,000 on Shopify</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Affiliate Program Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Become an Affiliate Partner
+            </h2>
+            <p className="text-lg text-gray-600">
+              Earn ₹50 for every seller you refer. Perfect for YouTubers and influencers.
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-lg border border-purple-200">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Affiliate Program</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <div className="text-3xl font-bold text-purple-600">₹50</div>
+                  <div className="text-sm text-gray-600">Per Referral</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-purple-600">∞</div>
+                  <div className="text-sm text-gray-600">No Limit</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-purple-600">24h</div>
+                  <div className="text-sm text-gray-600">Quick Payout</div>
+                </div>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Perfect for YouTubers, bloggers, and social media influencers. Share your unique link and earn for every successful seller registration.
+              </p>
+              <button
+                onClick={handleAffiliateApply}
+                className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Apply for Affiliate Program
+              </button>
             </div>
           </div>
         </div>
@@ -238,20 +370,98 @@ const BecomeSeller = () => {
       <div className="py-16 bg-gradient-to-r from-saffron-500 to-green-500">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Start Your Business?
+            Limited Time: Early Bird Pricing!
           </h2>
-          <p className="text-xl text-white/90 mb-8">
-            Join our platform today and start selling to millions of customers
+          <p className="text-xl text-white/90 mb-2">
+            Register now for lifetime ₹500/month pricing
           </p>
-          <button
-            onClick={handleStartSelling}
-            className="inline-flex items-center px-8 py-4 bg-white text-saffron-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-lg"
-          >
-            Apply to Become a Seller
-            <ArrowRightIcon className="ml-2 h-5 w-5" />
-          </button>
+          <p className="text-lg text-white/80 mb-8">
+            Price increases to ₹800/month after store opens for buyers
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={handleStartSelling}
+              className="inline-flex items-center px-8 py-4 bg-white text-saffron-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-lg"
+            >
+              Start Selling - ₹550
+              <ArrowRightIcon className="ml-2 h-5 w-5" />
+            </button>
+            <button
+              onClick={handleAffiliateApply}
+              className="inline-flex items-center px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors duration-200 shadow-lg"
+            >
+              Become Affiliate
+              <ArrowRightIcon className="ml-2 h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Affiliate Application Modal */}
+      {showAffiliateForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Apply for Affiliate Program</h3>
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Platform (YouTube, Instagram, etc.)
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="e.g., YouTube Channel"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Channel/Profile URL
+                </label>
+                <input
+                  type="url"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="https://youtube.com/channel/..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAffiliateForm(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  Apply
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

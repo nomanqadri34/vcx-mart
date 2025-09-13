@@ -157,27 +157,60 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Categories Horizontal Scroll */}
-      <section className="py-6 bg-white border-b border-gray-200">
+
+
+      {/* Shop by Category Section */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-4 overflow-x-auto scrollbar-hide pb-2">
-            {loading ? (
-              [...Array(8)].map((_, i) => (
-                <div key={i} className="flex-shrink-0 animate-pulse">
-                  <div className="bg-gray-200 rounded-lg h-12 w-24"></div>
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center mb-4">
+              <TagIcon className="h-8 w-8 text-saffron-500 mr-2" />
+              <h2 className="text-3xl font-bold text-gray-900">Shop by Category</h2>
+            </div>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Explore our wide range of product categories
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 rounded-xl h-32"></div>
+                  <div className="p-4">
+                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                    <div className="bg-gray-200 h-3 rounded"></div>
+                  </div>
                 </div>
-              ))
-            ) : categories.length > 0 ? (
-              categories.map((category) => (
-                <Link
+              ))}
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {categories.slice(0, 8).map((category, index) => (
+                <div
                   key={category._id}
-                  to={`/category/${category._id}/products`}
-                  className="flex-shrink-0 bg-gray-100 hover:bg-saffron-100 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-saffron-600 transition-colors whitespace-nowrap"
+                  className="opacity-0 animate-[fadeInUp_0.6s_ease-out_forwards]"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  {category.name}
-                </Link>
-              ))
-            ) : null}
+                  <CategoryCard category={category} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <TagIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No categories available</p>
+            </div>
+          )}
+
+          <div className="text-center mt-12">
+            <Link
+              to="/categories"
+              className="bg-saffron-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-saffron-700 transition-colors duration-200 shadow-md inline-flex items-center space-x-2"
+            >
+              <span>View All Categories</span>
+              <ArrowRightIcon className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -221,51 +254,7 @@ const HomePage = () => {
 
 
 
-      {/* Categories Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Explore our wide range of products organized into convenient
-              categories
-            </p>
-          </div>
 
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gray-200 rounded-xl h-32"></div>
-                </div>
-              ))}
-            </div>
-          ) : categories.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-              {categories.slice(0, 6).map((category) => (
-                <CategoryCard key={category._id} category={category} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <TagIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No categories available</p>
-            </div>
-          )}
-
-          <div className="text-center mt-8">
-            <Link
-              to="/categories"
-              className="inline-flex items-center space-x-2 text-saffron-600 hover:text-saffron-700 font-medium"
-            >
-              <span>View All Categories</span>
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Hot Deals Section */}
       {deals.length > 0 && (
@@ -281,7 +270,7 @@ const HomePage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {deals.map((product, index) => (
                 <div
                   key={product._id}
@@ -326,7 +315,7 @@ const HomePage = () => {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -342,7 +331,7 @@ const HomePage = () => {
               ))}
             </div>
           ) : featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-6">
               {featuredProducts.map((product, index) => (
                 <div
                   key={product._id}

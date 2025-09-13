@@ -118,7 +118,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData);
 
       if (response.data.success) {
-        // Don't auto-login after registration, just show success message
         toast.success(
           "Registration successful! Please check your email to verify your account."
         );
@@ -129,9 +128,28 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.error?.message ||
-        "Registration failed. Please try again.";
+      console.error('Registration error in AuthContext:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Full error object:', error.response);
+      
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (data.error?.message) {
+          errorMessage = data.error.message;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.errors) {
+          if (Array.isArray(data.errors)) {
+            errorMessage = data.errors.map(e => e.message || e.msg || e).join(', ');
+          } else {
+            errorMessage = Object.values(data.errors).flat().join(', ');
+          }
+        } else if (data.details) {
+          errorMessage = data.details;
+        }
+      }
+      
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

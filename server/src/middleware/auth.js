@@ -4,17 +4,29 @@ const logger = require('../utils/logger');
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from Authorization header
+    const authHeader = req.header('Authorization') || req.header('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    logger.debug('Auth middleware - Token:', { hasToken: !!token });
 
     if (!token) {
+      logger.warn('Auth middleware - No token provided');
       return res.status(401).json({
         success: false,
         error: { message: 'Access denied. No token provided.' }
       });
     }
 
+    logger.debug('Auth middleware - Verifying token');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+
+    logger.debug('Auth middleware - Token decoded:', { userId: decoded.userId });
+    const user = await User.findById(decoded.userId)
+      .select('-password -refreshTokens')
+      .lean();
+
+    logger.debug('Auth middleware - User found:', { hasUser: !!user });
 
     if (!user) {
       return res.status(401).json({
@@ -23,12 +35,15 @@ const auth = async (req, res, next) => {
       });
     }
 
-    if (!user.isActive) {
+    if (user.status !== 'active') {
+      logger.warn('Auth middleware - User account is not active:', { userId: user._id, status: user.status });
       return res.status(401).json({
         success: false,
         error: { message: 'Account is deactivated.' }
       });
     }
+
+    logger.debug('Auth middleware - Authentication successful:', { userId: user._id, role: user.role });
 
     req.user = user;
     next();

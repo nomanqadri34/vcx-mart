@@ -15,7 +15,8 @@ api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('accessToken');
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers['Authorization'] = `Bearer ${token}`;
+            config.headers['authorization'] = `Bearer ${token}`;
         }
         return config;
     },
@@ -153,21 +154,21 @@ export const sellerAPI = {
 
 // Admin API functions
 export const adminAPI = {
-    getDashboard: () => api.get('/admin/dashboard'),
-    getUsers: (params) => api.get('/admin/users', { params }),
-    updateUser: (userId, userData) => api.put(`/admin/users/${userId}`, userData),
-    deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
-    getSellers: (params) => api.get('/admin/sellers', { params }),
-    getSellerStats: () => api.get('/admin/sellers/stats'),
-    getSeller: (userId) => api.get(`/admin/sellers/${userId}`),
-    approveSeller: (userId, approvalData) => api.put(`/admin/sellers/${userId}/approve`, approvalData),
-    rejectSeller: (userId, rejectionData) => api.put(`/admin/sellers/${userId}/reject`, rejectionData),
-    getProducts: (params) => api.get('/admin/products', { params }),
-    updateProduct: (productId, productData) => api.put(`/admin/products/${productId}`, productData),
-    deleteProduct: (productId) => api.delete(`/admin/products/${productId}`),
-    getOrders: (params) => api.get('/admin/orders', { params }),
-    updateOrder: (orderId, orderData) => api.put(`/admin/orders/${orderId}`, orderData),
-    getAnalytics: (params) => api.get('/admin/analytics', { params }),
+    getDashboard: () => apiResponse(() => api.get('/admin/dashboard')),
+    getUsers: (params) => apiResponse(() => api.get('/admin/users', { params })),
+    updateUser: (userId, userData) => apiResponse(() => api.put(`/admin/users/${userId}`, userData)),
+    deleteUser: (userId) => apiResponse(() => api.delete(`/admin/users/${userId}`)),
+    getSellers: (params) => apiResponse(() => api.get('/admin/sellers', { params })),
+    getSellerStats: () => apiResponse(() => api.get('/admin/sellers/stats')),
+    getSeller: (userId) => apiResponse(() => api.get(`/admin/sellers/${userId}`)),
+    approveSeller: (userId, approvalData) => apiResponse(() => api.put(`/admin/sellers/${userId}/approve`, approvalData)),
+    rejectSeller: (userId, rejectionData) => apiResponse(() => api.put(`/admin/sellers/${userId}/reject`, rejectionData)),
+    getProducts: (params) => apiResponse(() => api.get('/admin/products', { params })),
+    updateProduct: (productId, productData) => apiResponse(() => api.put(`/admin/products/${productId}`, productData)),
+    deleteProduct: (productId) => apiResponse(() => api.delete(`/admin/products/${productId}`)),
+    getOrders: (params) => apiResponse(() => api.get('/admin/orders', { params })),
+    updateOrder: (orderId, orderData) => apiResponse(() => api.put(`/admin/orders/${orderId}`, orderData)),
+    getAnalytics: (params) => apiResponse(() => api.get('/admin/analytics', { params })),
 };
 
 // Product API functions

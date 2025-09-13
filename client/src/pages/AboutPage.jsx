@@ -23,7 +23,7 @@ const AboutPage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
                     <div className="text-center">
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-                            About <span className="text-yellow-400">Cryptomart</span>
+                            About <span className="text-yellow-400">VCX Mart</span>
                         </h1>
                         <p className="text-xl sm:text-2xl max-w-3xl mx-auto opacity-90">
                             India's premier multi-vendor marketplace connecting buyers with trusted sellers nationwide
@@ -77,7 +77,7 @@ const AboutPage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                            Why Choose Cryptomart?
+                            Why Choose VCX Mart?
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                             Experience the best of online shopping with our commitment to quality, security, and customer satisfaction.
@@ -156,7 +156,7 @@ const AboutPage = () => {
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
                         <div className="p-6">
                             <h3 className="font-semibold text-gray-900 mb-2">Email</h3>
-                            <p className="text-blue-600">support@cryptomart.com</p>
+                            <p className="text-blue-600">teamvtcx@gmail.com</p>
                         </div>
                         <div className="p-6">
                             <h3 className="font-semibold text-gray-900 mb-2">Phone</h3>

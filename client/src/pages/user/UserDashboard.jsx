@@ -5,10 +5,7 @@ import { sellerAPI } from "../../services/api";
 import {
   UserIcon,
   ShoppingBagIcon,
-  CreditCardIcon,
   MapPinIcon,
-  BellIcon,
-  ShieldCheckIcon,
   BuildingStorefrontIcon,
   ClockIcon,
   CheckCircleIcon,
@@ -50,30 +47,30 @@ const UserDashboard = () => {
 
   const getApplicationStatusBadge = (status) => {
     const statusConfig = {
-      pending: { 
-        color: "bg-yellow-100 text-yellow-800", 
-        text: "Pending Review", 
-        icon: ClockIcon 
+      pending: {
+        color: "bg-yellow-100 text-yellow-800",
+        text: "Pending Review",
+        icon: ClockIcon
       },
-      under_review: { 
-        color: "bg-blue-100 text-blue-800", 
-        text: "Under Review", 
-        icon: ExclamationTriangleIcon 
+      under_review: {
+        color: "bg-blue-100 text-blue-800",
+        text: "Under Review",
+        icon: ExclamationTriangleIcon
       },
-      approved: { 
-        color: "bg-green-100 text-green-800", 
-        text: "Approved", 
-        icon: CheckCircleIcon 
+      approved: {
+        color: "bg-green-100 text-green-800",
+        text: "Approved",
+        icon: CheckCircleIcon
       },
-      rejected: { 
-        color: "bg-red-100 text-red-800", 
-        text: "Rejected", 
-        icon: XCircleIcon 
+      rejected: {
+        color: "bg-red-100 text-red-800",
+        text: "Rejected",
+        icon: XCircleIcon
       },
-      requires_changes: { 
-        color: "bg-orange-100 text-orange-800", 
-        text: "Requires Changes", 
-        icon: ExclamationTriangleIcon 
+      requires_changes: {
+        color: "bg-orange-100 text-orange-800",
+        text: "Requires Changes",
+        icon: ExclamationTriangleIcon
       }
     };
 
@@ -117,27 +114,6 @@ const UserDashboard = () => {
       icon: MapPinIcon,
       href: "/user/addresses",
       color: "bg-purple-500"
-    },
-    {
-      title: "Payment Methods",
-      description: "Manage your payment options",
-      icon: CreditCardIcon,
-      href: "/user/payments",
-      color: "bg-indigo-500"
-    },
-    {
-      title: "Notifications",
-      description: "View and manage notifications",
-      icon: BellIcon,
-      href: "/user/notifications",
-      color: "bg-yellow-500"
-    },
-    {
-      title: "Security",
-      description: "Password and security settings",
-      icon: ShieldCheckIcon,
-      href: "/user/security",
-      color: "bg-red-500"
     }
   ];
 
@@ -259,48 +235,6 @@ const UserDashboard = () => {
           })}
         </div>
 
-        {/* Quick Stats */}
-        <div className="mt-8 bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Account Overview</h3>
-          </div>
-          <div className="px-6 py-4">
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Member Since</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {formatDate(user?.createdAt)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Email Status</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {user?.isEmailVerified ? (
-                    <span className="text-green-600">Verified</span>
-                  ) : (
-                    <span className="text-red-600">Not Verified</span>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Phone Status</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {user?.isPhoneVerified ? (
-                    <span className="text-green-600">Verified</span>
-                  ) : (
-                    <span className="text-red-600">Not Verified</span>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Account Type</dt>
-                <dd className="mt-1 text-sm text-gray-900 capitalize">
-                  {user?.role || 'User'}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
       </div>
     </div>
   );

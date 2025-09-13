@@ -122,14 +122,14 @@
   </url>
   
   <url>
-    <loc>https://vcxmart.com/shipping</loc>
+    <loc>https://vcxmart.com/shipping-info</loc>
     <lastmod>2024-01-01T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   
   <url>
-    <loc>https://vcxmart.com/returns</loc>
+    <loc>https://vcxmart.com/returns-refunds</loc>
     <lastmod>2024-01-01T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

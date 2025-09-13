@@ -84,8 +84,8 @@ const HelpPage = () => {
             <EnvelopeIcon className="h-8 w-8 text-saffron-600 mx-auto mb-3" />
             <h3 className="font-semibold text-gray-900 mb-2">Email Us</h3>
             <p className="text-gray-600 text-sm mb-3">We'll respond within 24hrs</p>
-            <a href="mailto:support@vcxmart.com" className="text-saffron-600 font-medium">
-              support@vcxmart.com
+            <a href="mailto:teamvtcx@gmail.com" className="text-saffron-600 font-medium">
+              teamvtcx@gmail.com
             </a>
           </div>
           

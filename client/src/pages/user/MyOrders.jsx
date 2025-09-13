@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  ClockIcon, 
-  CheckCircleIcon, 
-  TruckIcon, 
+import {
+  ClockIcon,
+  CheckCircleIcon,
+  TruckIcon,
   XCircleIcon,
   EyeIcon,
   ArrowPathIcon,
@@ -98,7 +98,7 @@ const MyOrders = () => {
 
     try {
       const response = await api.put(`/orders/${orderId}/cancel`, { reason });
-      
+
       if (response.data.success) {
         toast.success('Order cancelled successfully');
         fetchOrders();
@@ -128,7 +128,7 @@ const MyOrders = () => {
         rating: reviewData.rating,
         comment: reviewData.comment
       });
-      
+
       toast.success('Review submitted successfully!');
       setShowReviewModal(false);
       setSelectedProduct(null);
@@ -193,11 +193,10 @@ const MyOrders = () => {
                     setFilter(tab.key);
                     setCurrentPage(1);
                   }}
-                  className={`py-2 px-3 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
-                    filter === tab.key
+                  className={`py-2 px-3 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${filter === tab.key
                       ? 'border-saffron-500 text-saffron-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -234,7 +233,11 @@ const MyOrders = () => {
                           Order #{order.orderNumber}
                         </h3>
                         <p className="text-xs sm:text-sm text-gray-500">
-                          Placed on {new Date(order.createdAt).toLocaleDateString()}
+                          Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : 'Not available'}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -264,9 +267,12 @@ const MyOrders = () => {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-2">
+                          <Link
+                            to={`/products/${item.product._id || item.product}`}
+                            className="text-xs sm:text-sm font-medium text-gray-900 hover:text-saffron-600 line-clamp-2 block"
+                          >
                             {item.name}
-                          </h4>
+                          </Link>
                           <p className="text-xs sm:text-sm text-gray-500 mt-1">
                             Qty: {item.quantity} × ₹{item.price}
                           </p>
@@ -297,7 +303,7 @@ const MyOrders = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                     <div className="flex flex-wrap gap-2 sm:space-x-3">
                       <Link
-                        to={`/orders/${order._id}`}
+                        to={`/user/orders/${order._id}`}
                         className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                       >
                         <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -394,11 +400,10 @@ const MyOrders = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === page
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
                             ? 'z-10 bg-saffron-50 border-saffron-500 text-saffron-600'
                             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>
@@ -422,11 +427,11 @@ const MyOrders = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full mx-4 p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
               <h3 className="text-base sm:text-lg font-semibold mb-4">Write a Review</h3>
-              
+
               {selectedProduct && (
                 <div className="mb-4">
                   <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">Product: {selectedProduct.name}</p>
-                  
+
                   {/* Rating */}
                   <div className="mb-4">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Rating</label>
@@ -434,7 +439,7 @@ const MyOrders = () => {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
-                          onClick={() => setReviewData({...reviewData, rating: star})}
+                          onClick={() => setReviewData({ ...reviewData, rating: star })}
                           className="focus:outline-none"
                         >
                           {star <= reviewData.rating ? (
@@ -446,19 +451,19 @@ const MyOrders = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Comment */}
                   <div className="mb-4">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Review</label>
                     <textarea
                       value={reviewData.comment}
-                      onChange={(e) => setReviewData({...reviewData, comment: e.target.value})}
+                      onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
                       rows={4}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                       placeholder="Write your review here..."
                     />
                   </div>
-                  
+
                   {/* Buttons */}
                   <div className="flex flex-col sm:flex-row gap-2 sm:space-x-3">
                     <button

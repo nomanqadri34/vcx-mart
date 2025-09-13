@@ -52,12 +52,14 @@ const validateSellerApplication = [
     .matches(/^\d{6}$/)
     .withMessage('Invalid pincode'),
   body('panNumber')
+    .optional()
     .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
     .withMessage('Invalid PAN number format'),
   body('bankAccountNumber')
     .isLength({ min: 9, max: 18 })
     .withMessage('Invalid bank account number'),
   body('bankIFSC')
+    .optional()
     .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/)
     .withMessage('Invalid IFSC code'),
   body('bankName')
@@ -793,6 +795,30 @@ router.get('/products/low-stock', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: { message: 'Failed to get low stock products' }
+    });
+  }
+});
+
+// @route   GET /api/v1/seller/test-auth
+// @desc    Test authentication for seller routes
+// @access  Private
+router.get('/test-auth', auth, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Authentication successful',
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+        role: req.user.role,
+        isActive: req.user.isActive
+      }
+    });
+  } catch (error) {
+    logger.error('Test auth error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Authentication test failed' }
     });
   }
 });

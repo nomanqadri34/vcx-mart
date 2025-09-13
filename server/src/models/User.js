@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: function() {
+    required: function () {
       return !this.googleId; // Password not required for Google OAuth users
     },
     minlength: [8, 'Password must be at least 8 characters long'],
@@ -44,9 +44,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'seller', 'admin'],
     default: 'user'
   },
-  isActive: {
-    type: Boolean,
-    default: true
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
   },
   isEmailVerified: {
     type: Boolean,
@@ -122,13 +123,35 @@ const userSchema = new mongoose.Schema({
       enum: ['home', 'work', 'other'],
       default: 'home'
     },
-    isDefault: { type: Boolean, default: false },
-    street: String,
-    city: String,
-    state: String,
-    country: String,
-    postalCode: String,
-    landmark: String
+    fullName: {
+      type: String,
+      required: true
+    },
+    phone: {
+      type: String,
+      required: true
+    },
+    addressLine1: {
+      type: String,
+      required: true
+    },
+    addressLine2: String,
+    city: {
+      type: String,
+      required: true
+    },
+    state: {
+      type: String,
+      required: true
+    },
+    pincode: {
+      type: String,
+      required: true
+    },
+    isDefault: {
+      type: Boolean,
+      default: false
+    }
   }],
 
   // Preferences

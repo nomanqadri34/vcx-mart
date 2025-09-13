@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api";
 import DocumentUpload from "../../components/DocumentUpload";
 import { uploadToCloudinary } from "../../utils/cloudinary";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   BuildingOfficeIcon,
   DocumentTextIcon,
@@ -16,6 +17,18 @@ const SellerApplication = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documents, setDocuments] = useState({});
   const navigate = useNavigate();
+  const { user, isAuthenticated, loading } = useAuth();
+
+  // Check authentication and seller status
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      toast.error("Please login to access seller application");
+      navigate("/login");
+    } else if (user?.role === "seller") {
+      toast.info("You are already a seller");
+      navigate("/seller/dashboard");
+    }
+  }, [loading, isAuthenticated, user, navigate]);
 
   const {
     register,
@@ -170,6 +183,9 @@ const SellerApplication = () => {
           .join(", ")}`;
       } else if (error.response?.status === 401) {
         errorMessage = "Please log in to submit an application";
+        navigate("/login");
+      } else if (error.response?.status === 403) {
+        errorMessage = "Access denied. Please ensure you are logged in with proper permissions.";
       } else if (error.response?.status === 400) {
         errorMessage = "Invalid application data. Please check all fields.";
       }
@@ -179,6 +195,20 @@ const SellerApplication = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-saffron-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 py-8">

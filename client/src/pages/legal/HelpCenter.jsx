@@ -147,12 +147,20 @@ const HelpCenter = () => {
         <div className="mt-12 bg-gradient-to-r from-saffron-500 to-green-500 rounded-lg p-8 text-center text-white">
           <h2 className="text-2xl font-bold mb-4">Still need help?</h2>
           <p className="mb-6">Can't find what you're looking for? Our support team is here to help.</p>
-          <a
-            href="/contact"
-            className="inline-block bg-white text-saffron-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-          >
-            Contact Support
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="mailto:teamvtcx@gmail.com"
+              className="inline-block bg-white text-saffron-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            >
+              Email Support
+            </a>
+            <a
+              href="/contact"
+              className="inline-block border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-saffron-600 transition-colors"
+            >
+              Contact Support
+            </a>
+          </div>
         </div>
       </div>
     </div>

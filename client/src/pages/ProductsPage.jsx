@@ -177,12 +177,23 @@ const ProductsPage = () => {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+          {/* Mobile Filters Toggle */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full bg-white rounded-lg shadow-md p-4 flex items-center justify-between"
+            >
+              <span className="font-medium text-gray-900">Filters</span>
+              <FunnelIcon className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+
           {/* Filters Sidebar */}
-          <div className="lg:w-64">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+          <div className={`lg:w-64 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 lg:sticky lg:top-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900">Filters</h2>
                 <button
                   onClick={clearFilters}
                   className="text-sm text-saffron-600 hover:text-saffron-700"
@@ -192,7 +203,7 @@ const ProductsPage = () => {
               </div>
 
               {/* Category Filter */}
-              <div className="mb-6">
+              <div className="mb-4 lg:mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
@@ -201,7 +212,7 @@ const ProductsPage = () => {
                   onChange={(e) =>
                     handleFilterChange("category", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
@@ -213,7 +224,7 @@ const ProductsPage = () => {
               </div>
 
               {/* Price Range */}
-              <div className="mb-6">
+              <div className="mb-4 lg:mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Price Range
                 </label>
@@ -225,7 +236,7 @@ const ProductsPage = () => {
                     onChange={(e) =>
                       handleFilterChange("minPrice", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                   />
                   <input
                     type="number"
@@ -234,13 +245,13 @@ const ProductsPage = () => {
                     onChange={(e) =>
                       handleFilterChange("maxPrice", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                   />
                 </div>
               </div>
 
               {/* Sort Options */}
-              <div className="mb-6">
+              <div className="mb-4 lg:mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Sort By
                 </label>
@@ -251,7 +262,7 @@ const ProductsPage = () => {
                     handleFilterChange("sort", sort);
                     handleFilterChange("order", order);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                 >
                   <option value="createdAt-desc">Newest First</option>
                   <option value="createdAt-asc">Oldest First</option>
@@ -267,8 +278,8 @@ const ProductsPage = () => {
           {/* Products Grid */}
           <div className="flex-1">
             {/* View Controls */}
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 lg:mb-6 gap-3">
+              <p className="text-sm lg:text-base text-gray-600">
                 {loading ? "Loading..." : `${products.length} products found`}
               </p>
               <div className="flex items-center space-x-2">
@@ -279,7 +290,7 @@ const ProductsPage = () => {
                     : "bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                 >
-                  <Squares2X2Icon className="h-5 w-5" />
+                  <Squares2X2Icon className="h-4 w-4 lg:h-5 lg:w-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
@@ -288,7 +299,7 @@ const ProductsPage = () => {
                     : "bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                 >
-                  <ListBulletIcon className="h-5 w-5" />
+                  <ListBulletIcon className="h-4 w-4 lg:h-5 lg:w-5" />
                 </button>
               </div>
             </div>
@@ -314,8 +325,8 @@ const ProductsPage = () => {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                    : "space-y-4"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6"
+                    : "space-y-3 lg:space-y-4"
                 }
               >
                 {products.map((product, index) =>

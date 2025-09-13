@@ -52,6 +52,18 @@ const LoginPage = () => {
       const result = await login(data.email, data.password, "web");
 
       if (result && result.success) {
+        // Check if email is verified
+        if (result.user && !result.user.isEmailVerified) {
+          setError("Please verify your email address before logging in.");
+          navigate("/verify-email", {
+            state: {
+              message: "Please verify your email address to continue.",
+              email: data.email,
+            },
+          });
+          return;
+        }
+        
         // Redirect to intended destination or dashboard
         navigate(from, { replace: true });
       } else {
@@ -298,7 +310,6 @@ const LoginPage = () => {
                     size="large"
                     text="continue_with"
                     shape="rectangular"
-                    width="100%"
                     auto_select={false}
                   />
                 </div>

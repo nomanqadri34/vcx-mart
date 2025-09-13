@@ -25,21 +25,22 @@ const CartPage = () => {
 
     // Load cart on mount and auth changes
     useEffect(() => {
-        let isSubscribed = true;
-
-        const loadInitialCart = async () => {
-            if (isAuthenticated && isSubscribed) {
-                console.log('CartPage: Loading cart...');
-                await loadCart(true); // Force reload to ensure fresh data
-            }
-        };
-
-        loadInitialCart();
-
-        return () => {
-            isSubscribed = false;
-        };
+        if (isAuthenticated) {
+            console.log('CartPage: Loading cart...');
+            loadCart();
+        }
     }, [isAuthenticated, loadCart]);
+
+    // Listen for cart updates
+    useEffect(() => {
+        const handleCartUpdate = () => {
+            console.log('CartPage: Cart updated, reloading...');
+            loadCart();
+        };
+
+        window.addEventListener('cart-updated', handleCartUpdate);
+        return () => window.removeEventListener('cart-updated', handleCartUpdate);
+    }, [loadCart]);
 
     // Listen for checkout completion and clear cart
     useEffect(() => {
@@ -50,7 +51,7 @@ const CartPage = () => {
         };
 
         window.addEventListener('checkout-complete', handleCheckoutComplete);
-        
+
         return () => {
             window.removeEventListener('checkout-complete', handleCheckoutComplete);
         };

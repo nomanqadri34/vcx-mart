@@ -1,5 +1,6 @@
 const express = require('express');
 const { auth, requireAdmin } = require('../middleware/auth');
+const usersRouter = require('./admin/users');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
@@ -8,6 +9,9 @@ const SellerApplication = require('../models/SellerApplication');
 const { toRelativeTimeString } = require('../utils/dateUtils');
 
 const router = express.Router();
+
+// Mount the users router with auth and admin middleware
+router.use('/users', auth, requireAdmin, usersRouter);
 
 // Get admin dashboard stats
 router.get('/dashboard/stats', auth, requireAdmin, async (req, res) => {

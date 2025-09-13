@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +13,7 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { register: registerUser, googleAuth } = useAuth();
+  const { register: registerUser, googleAuth, resendVerification } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -36,73 +37,131 @@ const RegisterPage = () => {
 
   const password = watch("password");
 
-  const onSubmit = async (data) => {
-    try {
-      setIsLoading(true);
-      setError("");
-
-      const result = await registerUser({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        password: data.password,
-        termsAccepted: data.termsAccepted,
-        marketingConsent: data.marketingConsent,
-      });
-
-      if (result && result.success) {
-        // Registration successful, redirect to email verification
-        navigate("/verify-email", {
-          state: {
-            message:
-              "Account created successfully! Please check your email to verify your account.",
-            email: data.email,
-          },
-          replace: true,
-        });
-      } else {
-        setError(result?.error || "Registration failed. Please try again.");
-      }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Registration error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleRegister = async (credentialResponse) => {
+  const handleGoogleLogin = async (credentialResponse) => {
+    console.log("🔍 Google registration initiated:", credentialResponse);
     try {
       setIsLoading(true);
       setError("");
 
       if (credentialResponse.credential) {
+        console.log("✅ Credential received, decoding...");
         // Decode the JWT token to get user info
         const decoded = jwtDecode(credentialResponse.credential);
+        console.log("✅ Token decoded:", {
+          email: decoded.email,
+          name: decoded.name,
+        });
 
-        // Call the backend Google OAuth endpoint
-        const result = await googleAuth(
-          credentialResponse.credential,
-          "web"
-        );
+        console.log("🚀 Calling backend googleAuth...");
+        // Call googleAuth for Google registration/login
+        const result = await googleAuth(credentialResponse.credential, "web");
+
+        console.log("📥 Backend response:", result);
 
         if (result && result.success) {
-          // Redirect to user dashboard or show success message
-          navigate("/user/dashboard", { replace: true });
+          console.log("✅ Registration successful, redirecting...");
+          // Redirect to email verification or dashboard based on the response
+          if (result.data?.requiresEmailVerification) {
+            navigate('/verify-email', {
+              state: {
+                email: decoded.email,
+                message: 'Please verify your email to continue'
+              }
+            });
+          } else {
+            navigate('/user/dashboard');
+          }
         } else {
-          setError(
-            result?.error || "Google registration failed. Please try again."
-          );
+          console.log("❌ Registration failed:", result?.error);
+          setError(result?.error?.message || result?.error || 'Registration failed');
         }
+      } else {
+        console.log("❌ No credential in response");
+        setError("No credential received from Google");
       }
     } catch (err) {
-      setError("Google registration failed. Please try again.");
-      console.error("Google registration error:", err);
+      console.error('💥 Google registration error:', err);
+      setError(err?.response?.data?.error?.message || err.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const onSubmit = async (data) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      console.log('Submitting registration data:', {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        termsAccepted: data.termsAccepted,
+        marketingConsent: data.marketingConsent
+      });
+
+      const result = await registerUser({
+        name: `${data.firstName.trim()} ${data.lastName.trim()}`,
+        email: data.email.toLowerCase().trim(),
+        phone: data.phone.trim(),
+        password: data.password,
+      });
+
+      if (result && result.success) {
+        // Automatically send verification OTP
+        try {
+          await resendVerification(data.email);
+        } catch (otpError) {
+          console.log('OTP send failed:', otpError);
+        }
+
+        navigate("/verify-email", {
+          state: {
+            message: "Account created successfully! Please check your email for the verification code.",
+            email: data.email,
+          },
+          replace: true,
+        });
+      } else {
+        console.error('Registration failed:', result);
+        const errorMsg = result?.error || result?.message || "Registration failed. Please try again.";
+        setError(errorMsg);
+      }
+    } catch (err) {
+      console.error("Registration error details:", {
+        error: err,
+        response: err.response,
+        data: err.response?.data,
+        status: err.response?.status,
+        statusText: err.response?.statusText
+      });
+
+      let errorMsg = "Registration failed. Please try again.";
+
+      if (err.response?.data) {
+        if (err.response.data.error?.message) {
+          errorMsg = err.response.data.error.message;
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        } else if (err.response.data.errors) {
+          // Handle validation errors array
+          const validationErrors = err.response.data.errors;
+          if (Array.isArray(validationErrors)) {
+            errorMsg = validationErrors.map(e => e.message || e.msg || e).join(', ');
+          } else {
+            errorMsg = JSON.stringify(validationErrors);
+          }
+        }
+      }
+
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-saffron-50 to-green-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -149,9 +208,8 @@ const RegisterPage = () => {
                     type="text"
                     autoComplete="given-name"
                     required
-                    className={`appearance-none relative block w-full px-3 py-2 border ${
-                      errors.firstName ? "border-red-300" : "border-gray-300"
-                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${errors.firstName ? "border-red-300" : "border-gray-300"
+                      } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                     placeholder="First name"
                     {...register("firstName", {
                       required: "First name is required",
@@ -187,9 +245,8 @@ const RegisterPage = () => {
                     type="text"
                     autoComplete="family-name"
                     required
-                    className={`appearance-none relative block w-full px-3 py-2 border ${
-                      errors.lastName ? "border-red-300" : "border-gray-300"
-                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                    className={`appearance-none relative block w-full px-3 py-2 border ${errors.lastName ? "border-red-300" : "border-gray-300"
+                      } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                     placeholder="Last name"
                     {...register("lastName", {
                       required: "Last name is required",
@@ -227,9 +284,8 @@ const RegisterPage = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 border ${
-                    errors.email ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 border ${errors.email ? "border-red-300" : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your email"
                   {...register("email", {
                     required: "Email is required",
@@ -262,15 +318,14 @@ const RegisterPage = () => {
                   type="tel"
                   autoComplete="tel"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 border ${
-                    errors.phone ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
-                  placeholder="Enter your phone number"
+                  className={`appearance-none relative block w-full px-3 py-2 border ${errors.phone ? "border-red-300" : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  placeholder="Enter 10-digit phone number"
                   {...register("phone", {
                     required: "Phone number is required",
                     pattern: {
-                      value: /^[+]?[\d\s\-\(\)]+$/,
-                      message: "Please enter a valid phone number",
+                      value: /^[6-9]\d{9}$/,
+                      message: "Please enter a valid 10-digit phone number",
                     },
                   })}
                 />
@@ -297,9 +352,8 @@ const RegisterPage = () => {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${errors.password ? "border-red-300" : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                   placeholder="Create a strong password"
                   {...register("password", {
                     required: "Password is required",
@@ -348,11 +402,10 @@ const RegisterPage = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${
-                    errors.confirmPassword
-                      ? "border-red-300"
-                      : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${errors.confirmPassword
+                    ? "border-red-300"
+                    : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                   placeholder="Confirm your password"
                   {...register("confirmPassword", {
                     required: "Please confirm your password",
@@ -399,14 +452,14 @@ const RegisterPage = () => {
                 <label htmlFor="termsAccepted" className="text-gray-700">
                   I agree to the{" "}
                   <Link
-                    to="/terms"
+                    to="/terms-of-service"
                     className="text-saffron-600 hover:text-saffron-500 transition-colors"
                   >
                     Terms and Conditions
                   </Link>{" "}
                   and{" "}
                   <Link
-                    to="/privacy"
+                    to="/privacy-policy"
                     className="text-saffron-600 hover:text-saffron-500 transition-colors"
                   >
                     Privacy Policy
@@ -443,11 +496,10 @@ const RegisterPage = () => {
             <button
               type="submit"
               disabled={!isValid || isLoading}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                !isValid || isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-saffron-600 to-green-600 hover:from-saffron-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-saffron-500 transition-all duration-200"
-              }`}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${!isValid || isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-saffron-600 to-green-600 hover:from-saffron-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-saffron-500 transition-all duration-200"
+                }`}
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -472,45 +524,42 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Google OAuth Registration */}
-            {import.meta.env.VITE_ENABLE_GOOGLE_AUTH === "true" &&
-              import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-                <div className="mt-6">
-                  <GoogleLogin
-                    onSuccess={handleGoogleRegister}
-                    onError={(error) => {
-                      console.error("Google OAuth Error:", error);
-                      setError(
-                        "Google registration failed. Please check your internet connection and try again."
-                      );
-                    }}
-                    useOneTap={false} // Disable one-tap for better debugging
-                    theme="outline"
-                    size="large"
-                    text="signup_with"
-                    shape="rectangular"
-                    width="100%"
-                    auto_select={false} // Disable auto-select for debugging
-                  />
-                </div>
-              )}
 
-            {/* Debug info in development */}
-            {import.meta.env.MODE === "development" && (
-              <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
-                <p>
-                  <strong>Google Auth Status:</strong>
-                </p>
-                <p>
-                  Client ID:{" "}
-                  {import.meta.env.VITE_GOOGLE_CLIENT_ID
-                    ? "Configured"
-                    : "Missing"}
-                </p>
-                <p>Enabled: {import.meta.env.VITE_ENABLE_GOOGLE_AUTH}</p>
-                <p>Environment: {import.meta.env.MODE}</p>
+
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-gradient-to-br from-saffron-50 to-green-50 text-gray-500">
+                    Or register with
+                  </span>
+                </div>
               </div>
-            )}
+
+              {/* Google OAuth Register */}
+              {import.meta.env.VITE_ENABLE_GOOGLE_AUTH === "true" &&
+                import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+                  <div className="mt-6">
+                    <GoogleLogin
+                      onSuccess={handleGoogleLogin}
+                      onError={(error) => {
+                        console.error("Google OAuth Error:", error);
+                        setError(
+                          "Google registration failed. Please try again or use email registration."
+                        );
+                      }}
+                      useOneTap={false}
+                      theme="outline"
+                      size="large"
+                      text="signup_with"
+                      shape="rectangular"
+                      auto_select={false}
+                    />
+                  </div>
+                )}
+            </div>
           </div>
         </form>
 

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MagnifyingGlassIcon, 
-  EyeIcon, 
+import {
+  MagnifyingGlassIcon,
+  EyeIcon,
   UserCircleIcon,
   ShieldCheckIcon,
   ShieldExclamationIcon,
   BuildingStorefrontIcon
 } from '@heroicons/react/24/outline';
-import api from '../../services/api';
+import { adminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const AdminUserManagement = () => {
@@ -33,13 +33,19 @@ const AdminUserManagement = () => {
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(searchTerm && { search: searchTerm })
       });
-      
-      const response = await api.get(`/admin/users?${params}`);
-      setUsers(response.data.data.users || []);
-      setTotalPages(response.data.data.totalPages || 1);
+
+      const response = await adminAPI.getUsers(Object.fromEntries(params));
+      if (response.success) {
+        setUsers(response.data.users || []);
+        setTotalPages(response.data.totalPages || 1);
+      } else {
+        throw new Error(response.error || 'Failed to fetch users');
+      }
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      toast.error('Failed to load users');
+      toast.error(error?.response?.data?.error?.message || error.message || 'Failed to load users');
+      setUsers([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -47,7 +53,8 @@ const AdminUserManagement = () => {
 
   const handleStatusChange = async (userId, newStatus) => {
     try {
-      await api.patch(`/admin/users/${userId}/status`, { status: newStatus });
+      const response = await adminAPI.updateUser(userId, { status: newStatus });
+      if (!response.success) throw new Error(response.error);
       toast.success('User status updated successfully');
       fetchUsers();
     } catch (error) {
@@ -58,9 +65,10 @@ const AdminUserManagement = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     if (!window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) return;
-    
+
     try {
-      await api.patch(`/admin/users/${userId}/role`, { role: newRole });
+      const response = await adminAPI.updateUser(userId, { role: newRole });
+      if (!response.success) throw new Error(response.error);
       toast.success('User role updated successfully');
       fetchUsers();
     } catch (error) {
@@ -75,10 +83,10 @@ const AdminUserManagement = () => {
       seller: { color: 'bg-blue-100 text-blue-800', icon: BuildingStorefrontIcon },
       user: { color: 'bg-gray-100 text-gray-800', icon: UserCircleIcon }
     };
-    
+
     const config = roleConfig[role] || roleConfig.user;
     const IconComponent = config.icon;
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
         <IconComponent className="w-3 h-3 mr-1" />
@@ -93,10 +101,10 @@ const AdminUserManagement = () => {
       inactive: { color: 'bg-red-100 text-red-800', icon: ShieldExclamationIcon },
       suspended: { color: 'bg-yellow-100 text-yellow-800', icon: ShieldExclamationIcon }
     };
-    
+
     const config = statusConfig[status] || statusConfig.active;
     const IconComponent = config.icon;
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
         <IconComponent className="w-3 h-3 mr-1" />

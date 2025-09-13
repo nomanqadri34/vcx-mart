@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  TagIcon, 
+import {
+  TagIcon,
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import ProductCard from '../components/ProductCard';
 
 const CategoriesPage = () => {
   const [categories, setCategories] = useState([]);
@@ -28,6 +29,10 @@ const CategoriesPage = () => {
   useEffect(() => {
     if (selectedCategory) {
       fetchCategoryData(selectedCategory._id);
+      // Auto-close sidebar on mobile when category changes
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
     }
   }, [selectedCategory]);
 
@@ -38,7 +43,7 @@ const CategoriesPage = () => {
       const allCategories = response.data.data.categories || [];
       const mainCategories = allCategories.filter(cat => cat.level === 0);
       setCategories(mainCategories);
-      
+
       // Auto-select first category
       if (mainCategories.length > 0 && !selectedCategory) {
         setSelectedCategory(mainCategories[0]);
@@ -58,10 +63,10 @@ const CategoriesPage = () => {
         api.get(`/categories?parent=${categoryId}`),
         api.get(`/products?category=${categoryId}&limit=20`)
       ]);
-      
+
       const subcategories = subcategoriesRes.data.data.categories || [];
       const categoryProducts = productsRes.data.data.products || [];
-      
+
       setProducts({ subcategories, products: categoryProducts });
     } catch (error) {
       console.error('Failed to fetch category data:', error);
@@ -71,14 +76,11 @@ const CategoriesPage = () => {
     }
   };
 
-  const filteredCategories = categories.filter(category => 
+  const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setIsSidebarOpen(false);
-  };
+
 
   const getCategoryImage = (category) => {
     if (category.image?.url) return category.image.url;
@@ -86,29 +88,22 @@ const CategoriesPage = () => {
     return defaultCategoryImage;
   };
 
-  const ProductCard = ({ product }) => (
-    <Link to={`/product/${product._id}`} className="group">
-      <div className="bg-white rounded-lg shadow-sm group-hover:shadow-md transition-all duration-200 overflow-hidden">
-        <div className="aspect-square overflow-hidden">
-          <img 
-            src={product.images?.[0]?.url || defaultCategoryImage}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-        <div className="p-3">
-          <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">{product.name}</h3>
-          <p className="text-saffron-600 font-semibold">₹{product.price || product.basePrice}</p>
-        </div>
-      </div>
-    </Link>
-  );
+  const handleCategorySelect = (category) => {
+    console.log('Category selected:', category.name);
+    setSelectedCategory(category);
+    // Auto-close sidebar on mobile
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  // Using the same ProductCard component as ProductsPage
 
   const SubcategoryCard = ({ subcategory }) => (
     <Link to={`/category/${subcategory._id}/products`} className="group">
       <div className="bg-white rounded-lg shadow-sm group-hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-100">
         <div className="aspect-video overflow-hidden">
-          <img 
+          <img
             src={getCategoryImage(subcategory)}
             alt={subcategory.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -125,17 +120,17 @@ const CategoriesPage = () => {
   );
 
   const Sidebar = () => (
-    <div className={`fixed lg:relative top-0 lg:top-auto bottom-16 lg:bottom-auto left-0 z-50 w-72 bg-white shadow-lg transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col lg:h-auto`}>
+    <div className={`sidebar-container fixed lg:relative top-0 lg:top-auto bottom-16 lg:bottom-auto left-0 z-50 w-64 sm:w-72 lg:w-64 bg-white shadow-lg transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col lg:h-auto`}>
       <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
         <h2 className="font-semibold text-gray-900">Categories</h2>
-        <button 
+        <button
           onClick={() => setIsSidebarOpen(false)}
           className="lg:hidden p-1 text-gray-500 hover:text-gray-700"
         >
           <XMarkIcon className="h-5 w-5" />
         </button>
       </div>
-      
+
       <div className="p-4 flex-shrink-0">
         <div className="relative">
           <input
@@ -163,15 +158,19 @@ const CategoriesPage = () => {
             {filteredCategories.map((category) => (
               <button
                 key={category._id}
-                onClick={() => handleCategorySelect(category)}
-                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-colors ${
-                  selectedCategory?._id === category._id
+                onClick={() => {
+                  console.log('Category clicked:', category.name);
+                  setSelectedCategory(category);
+                  console.log('Closing sidebar');
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-colors ${selectedCategory?._id === category._id
                     ? 'bg-saffron-50 text-saffron-700 border-l-4 border-saffron-600'
                     : 'text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-3">
-                  <img 
+                  <img
                     src={getCategoryImage(category)}
                     alt={category.name}
                     className="w-8 h-8 rounded object-cover"
@@ -194,7 +193,7 @@ const CategoriesPage = () => {
         <div className="flex items-center justify-between">
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 text-gray-600 hover:text-saffron-600"
+            className="sidebar-toggle p-2 text-gray-600 hover:text-saffron-600"
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
@@ -207,12 +206,15 @@ const CategoriesPage = () => {
       <div className="flex min-h-[calc(100vh-4rem)] lg:min-h-screen">
         {/* Sidebar */}
         <Sidebar />
-        
+
         {/* Overlay for mobile */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={() => {
+              console.log('Overlay clicked - closing sidebar');
+              setIsSidebarOpen(false);
+            }}
           />
         )}
 
@@ -233,7 +235,7 @@ const CategoriesPage = () => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 p-6 pb-20 md:pb-6">
+          <div className="flex-1 p-3 sm:p-4 lg:p-6 pb-20 md:pb-6">
             {!selectedCategory ? (
               <div className="text-center py-12">
                 <TagIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -257,7 +259,7 @@ const CategoriesPage = () => {
                 {products.subcategories?.length > 0 && (
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Subcategories</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
                       {products.subcategories.map((subcategory) => (
                         <SubcategoryCard key={subcategory._id} subcategory={subcategory} />
                       ))}
@@ -269,9 +271,15 @@ const CategoriesPage = () => {
                 {products.products?.length > 0 && (
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Products</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {products.products.map((product) => (
-                        <ProductCard key={product._id} product={product} />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+                      {products.products.map((product, index) => (
+                        <div
+                          key={product._id}
+                          className="opacity-0 animate-[fadeInUp_0.6s_ease-out_forwards]"
+                          style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                          <ProductCard product={product} showDiscount={true} />
+                        </div>
                       ))}
                     </div>
                   </div>

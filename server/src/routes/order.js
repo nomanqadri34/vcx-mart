@@ -64,10 +64,34 @@ router.get('/user', auth, async (req, res) => {
 
         const totalOrders = await Order.countDocuments(query);
 
+        // Transform orders for frontend
+        const transformedOrders = orders.map(order => ({
+            _id: order._id,
+            orderNumber: order.orderNumber,
+            createdAt: order.createdAt,
+            status: order.status,
+            total: order.total,
+            items: order.items.map(item => ({
+                _id: item._id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.subtotal,
+                image: item.image || item.product?.images?.[0]?.url || item.product?.images?.[0],
+                product: {
+                    _id: item.product?._id,
+                    name: item.product?.name
+                },
+                variants: item.variants
+            })),
+            shipping: order.shipping,
+            shippingAddress: order.shippingAddress
+        }));
+
         res.json({
             success: true,
             data: {
-                orders,
+                orders: transformedOrders,
                 pagination: {
                     currentPage: parseInt(page),
                     totalPages: Math.ceil(totalOrders / parseInt(limit)),
@@ -96,8 +120,18 @@ router.get('/:orderId', auth, async (req, res) => {
             _id: orderId,
             customer: userId
         })
-            .populate('seller', 'businessName firstName lastName email phone')
-            .populate('items.product', 'name images price description')
+            .populate({
+                path: 'customer',
+                select: 'firstName lastName email phone'
+            })
+            .populate({
+                path: 'items.product',
+                select: 'name images price description'
+            })
+            .populate({
+                path: 'items.seller',
+                select: 'businessName firstName lastName email phone'
+            })
             .populate('shippingAddress')
             .populate('billingAddress');
 

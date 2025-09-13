@@ -43,7 +43,7 @@ const AdminSellerManagement = () => {
       setLoading(true);
       const response = await adminAPI.getSellers({ status: selectedStatus });
       console.log('Sellers response:', response.data);
-      const applications = response.data.data.applications || [];
+      const applications = response.data?.applications || response.data?.data?.applications || response.data || [];
       console.log('Applications array:', applications);
       // Filter out applications without sellerApplication data
       const validApplications = applications.filter(
@@ -63,7 +63,7 @@ const AdminSellerManagement = () => {
   const fetchStats = async () => {
     try {
       const response = await adminAPI.getSellerStats();
-      const stats = response.data.data;
+      const stats = response.data?.data || response.data || {};
 
       setStats({
         pending: stats.pending || 0,
@@ -73,6 +73,12 @@ const AdminSellerManagement = () => {
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
+      setStats({
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0,
+      });
     }
   };
 
@@ -80,8 +86,9 @@ const AdminSellerManagement = () => {
     try {
       const response = await adminAPI.getSeller(applicationId);
       console.log('Application details response:', response.data);
-      console.log('Application data:', response.data.data.application);
-      setSelectedApplication(response.data.data.application);
+      const application = response.data?.application || response.data?.data?.application || response.data;
+      console.log('Application data:', application);
+      setSelectedApplication(application);
       setShowModal(true);
     } catch (error) {
       console.error('Error fetching application details:', error);

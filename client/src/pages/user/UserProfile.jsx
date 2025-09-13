@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { userAPI } from "../../services/api";
 import { UserIcon, PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import toast from "react-hot-toast";
+import toast from 'react-hot-toast';
 
 const UserProfile = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,14 +41,15 @@ const UserProfile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await userAPI.updateProfile(formData);
-      if (response.data.success) {
-        updateUser(response.data.data.user);
+      // Use updateProfile from the auth context instead of calling API directly
+      const result = await updateProfile(formData);
+      if (result.success) {
         setIsEditing(false);
-        toast.success("Profile updated successfully");
+        // Toast notification is already handled in the auth context
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      console.error('Profile update error:', error);
+      // Toast notification is already handled in the auth context
     } finally {
       setLoading(false);
     }

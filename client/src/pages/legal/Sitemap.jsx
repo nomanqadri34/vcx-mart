@@ -56,9 +56,9 @@ const Sitemap = () => {
       links: [
         { name: 'Help Center', path: '/help' },
         { name: 'Contact Support', path: '/contact' },
-        { name: 'Returns & Refunds', path: '/returns' },
-        { name: 'Shipping Information', path: '/shipping' },
-        { name: 'Track Order', path: '/track-order' }
+        { name: 'Returns & Refunds', path: '/returns-refunds' },
+        { name: 'Shipping Information', path: '/shipping-info' },
+
       ]
     },
     {
@@ -100,7 +100,7 @@ const Sitemap = () => {
             <h1 className="text-4xl font-bold text-gray-900">Sitemap</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Navigate through all pages and sections of VCX MART. Find exactly what you're looking for 
+            Navigate through all pages and sections of VCX MART. Find exactly what you're looking for
             with our comprehensive site structure.
           </p>
         </div>

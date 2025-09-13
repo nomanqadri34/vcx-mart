@@ -30,6 +30,7 @@ import DealsPage from "./pages/DealsPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import HelpPage from "./pages/HelpPage";
+import ShippingInfo from "./pages/ShippingInfo";
 import CheckoutPage from "./pages/CheckoutPage";
 
 // Legal Pages
@@ -41,6 +42,14 @@ import GrievancePolicyPage from "./pages/legal/GrievancePolicyPage";
 import SecurityPolicyPage from "./pages/legal/SecurityPolicyPage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 import IPPolicyPage from "./pages/legal/IPPolicyPage";
+import ReturnsRefundsPage from "./pages/legal/ReturnsRefundsPage";
+import ShippingInfoPage from "./pages/legal/ShippingInfoPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
+import AccessibilityPage from "./pages/legal/AccessibilityPage";
+import BugBountyPage from "./pages/legal/BugBountyPage";
+import CareersPage from "./pages/legal/CareersPage";
+import PressMediaPage from "./pages/legal/PressMediaPage";
+import SecurityPage from "./pages/legal/SecurityPage";
 import GoKwikCheckoutPage from "./pages/GoKwikCheckoutPage";
 import RazorpayCheckoutPage from "./pages/RazorpayCheckoutPage";
 import CartPage from "./pages/CartPage";
@@ -80,10 +89,12 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 // User Dashboard
 import UserDashboard from "./pages/user/UserDashboard";
 import MyOrders from "./pages/user/MyOrders";
+import OrderDetail from "./pages/user/OrderDetail";
 
 // Seller Dashboard
 import BecomeSeller from "./pages/seller/BecomeSeller";
 import SellerApplication from "./pages/seller/SellerApplication";
+import SellerApplicationNew from "./pages/seller/SellerApplicationNew";
 import SellerDashboardReal from "./pages/seller/SellerDashboard";
 import ProductManagement from "./pages/seller/ProductManagement";
 import AddProduct from "./pages/seller/AddProduct";
@@ -146,6 +157,15 @@ function App() {
                         <Route path="/security-policy" element={<SecurityPolicyPage />} />
                         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
                         <Route path="/ip-policy" element={<IPPolicyPage />} />
+                        <Route path="/returns-refunds" element={<ReturnsRefundsPage />} />
+                        <Route path="/shipping-info" element={<ShippingInfo />} />
+                        <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
+                        <Route path="/accessibility" element={<AccessibilityPage />} />
+                        <Route path="/bug-bounty" element={<BugBountyPage />} />
+                        <Route path="/careers" element={<CareersPage />} />
+                        <Route path="/press" element={<PressMediaPage />} />
+                        <Route path="/security" element={<SecurityPage />} />
+                        <Route path="/intellectual-property" element={<IPPolicyPage />} />
                         <Route
                           path="/product/:id"
                           element={<ProductDetailPage />}
@@ -206,6 +226,7 @@ function App() {
                                   element={<UserDashboard />}
                                 />
                                 <Route path="orders" element={<MyOrders />} />
+                                <Route path="orders/:id" element={<OrderDetail />} />
                                 <Route path="profile" element={<UserProfile />} />
                                 <Route path="wishlist" element={<Wishlist />} />
                                 <Route
@@ -233,8 +254,16 @@ function App() {
                         <Route
                           path="/seller/apply"
                           element={
-                            <ProtectedRoute allowedRoles={["user"]}>
+                            <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
                               <SellerApplication />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/apply-new"
+                          element={
+                            <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
+                              <SellerApplicationNew />
                             </ProtectedRoute>
                           }
                         />
