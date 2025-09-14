@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const SellerApplication = require('../models/SellerApplication');
 const razorpayService = require('../services/razorpayService');
-const { protect, authorize } = require('../middleware/auth');
+const { auth: protect, authorize } = require('../middleware/auth');
 
 // Create registration payment order
 router.post('/registration/create', protect, async (req, res) => {

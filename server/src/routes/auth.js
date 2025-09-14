@@ -258,7 +258,8 @@ router.post('/forgot-password', [
     await user.save();
 
     // Send email
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
     const message = `You are receiving this email because you requested a password reset. Please click the link below to reset your password:\n\n${resetUrl}`;
 
     try {
