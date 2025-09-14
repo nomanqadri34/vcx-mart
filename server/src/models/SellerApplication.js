@@ -217,6 +217,48 @@ const sellerApplicationSchema = new mongoose.Schema({
     default: Date.now
   },
 
+  // Registration Fee (One-time)
+  registrationFee: {
+    type: Number,
+    default: 50
+  },
+  registrationPaid: {
+    type: Boolean,
+    default: false
+  },
+  registrationPaymentId: String,
+  registrationPaidAt: Date,
+
+  // Monthly Subscription
+  subscriptionPlan: {
+    type: String,
+    enum: ['early_bird', 'regular'],
+    default: function() {
+      return new Date() < new Date('2025-10-01') ? 'early_bird' : 'regular';
+    }
+  },
+  monthlyAmount: {
+    type: Number,
+    default: function() {
+      return new Date() < new Date('2025-10-01') ? 500 : 800;
+    }
+  },
+  razorpaySubscriptionId: String,
+  razorpayCustomerId: String,
+  subscriptionStatus: {
+    type: String,
+    enum: ['pending', 'created', 'authenticated', 'active', 'paused', 'cancelled', 'completed'],
+    default: 'pending'
+  },
+  subscriptionLink: String,
+  subscriptionStartDate: Date,
+  subscriptionEndDate: Date,
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending'
+  },
+
   // Documents
   documents: [{
     type: {
@@ -309,6 +351,22 @@ sellerApplicationSchema.methods.requestChanges = function (reviewerId, reason, n
   this.reviewedAt = new Date();
   this.rejectionReason = reason;
   this.reviewNotes = notes;
+  return this.save();
+};
+
+sellerApplicationSchema.methods.createSubscription = function (subscriptionId, customerId, subscriptionLink) {
+  this.razorpaySubscriptionId = subscriptionId;
+  this.razorpayCustomerId = customerId;
+  this.subscriptionLink = subscriptionLink;
+  this.subscriptionStatus = 'created';
+  return this.save();
+};
+
+sellerApplicationSchema.methods.activateSubscription = function () {
+  this.subscriptionStatus = 'active';
+  this.paymentStatus = 'paid';
+  this.subscriptionStartDate = new Date();
+  this.subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
   return this.save();
 };
 

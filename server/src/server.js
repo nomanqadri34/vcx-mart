@@ -36,6 +36,7 @@ const cartRoutes = require('./routes/cart');
 const couponRoutes = require('./routes/coupons');
 const reviewRoutes = require('./routes/reviews');
 const uploadRoutes = require('./routes/upload');
+const subscriptionRoutes = require('./routes/subscription');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -158,6 +159,7 @@ app.use(`/api/${process.env.API_VERSION || 'v1'}/affiliate`, affiliateRoutes);
 app.use(`/api/${process.env.API_VERSION || 'v1'}/coupons`, couponRoutes);
 app.use(`/api/${process.env.API_VERSION || 'v1'}/reviews`, reviewRoutes);
 app.use(`/api/${process.env.API_VERSION || 'v1'}/upload`, uploadRoutes);
+app.use(`/api/${process.env.API_VERSION || 'v1'}/subscription`, subscriptionRoutes);
 
 // Error handling middleware
 app.use(notFound);

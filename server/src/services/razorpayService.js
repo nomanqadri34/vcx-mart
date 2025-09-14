@@ -1,195 +1,174 @@
 const Razorpay = require('razorpay');
-const crypto = require('crypto');
-const logger = require('../utils/logger');
+const PRICING = require('../config/razorpayPlans');
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 class RazorpayService {
-    constructor() {
-        this.keyId = process.env.RAZORPAY_KEY_ID;
-        this.keySecret = process.env.RAZORPAY_KEY_SECRET;
-        this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-        this.testMode = process.env.RAZORPAY_TEST_MODE === 'true';
-
-        // Initialize Razorpay instance
-        if (this.keyId && this.keySecret) {
-            this.razorpay = new Razorpay({
-                key_id: this.keyId,
-                key_secret: this.keySecret,
-            });
-            logger.info(`Razorpay Service initialized in ${this.testMode ? 'TEST' : 'LIVE'} mode`);
-        } else {
-            logger.warn('Razorpay credentials not configured, will use mock mode');
+  // Create subscription plan
+  async createPlan(planData) {
+    try {
+      const plan = await razorpay.plans.create({
+        period: 'monthly',
+        interval: 1,
+        item: {
+          name: planData.name,
+          amount: planData.amount * 100, // Convert to paise
+          currency: 'INR',
+          description: planData.description
         }
+      });
+      return plan;
+    } catch (error) {
+      throw new Error(`Failed to create plan: ${error.message}`);
     }
+  }
 
-    // Create payment order
-    async createOrder(orderData) {
-        try {
-            // Check if in mock mode (no credentials)
-            if (!this.razorpay) {
-                return this.createMockOrder(orderData);
-            }
-
-            const options = {
-                amount: Math.round(orderData.total * 100), // Convert to paise
-                currency: 'INR',
-                receipt: orderData.orderNumber,
-                notes: {
-                    orderNumber: orderData.orderNumber,
-                    userId: orderData.userId,
-                    customerEmail: orderData.customer.email,
-                    customerPhone: orderData.customer.phone
-                }
-            };
-
-            const razorpayOrder = await this.razorpay.orders.create(options);
-
-            logger.info('Razorpay order created:', {
-                orderId: razorpayOrder.id,
-                amount: razorpayOrder.amount,
-                currency: razorpayOrder.currency
-            });
-
-            return {
-                success: true,
-                data: {
-                    orderId: razorpayOrder.id,
-                    amount: razorpayOrder.amount,
-                    currency: razorpayOrder.currency,
-                    keyId: this.keyId,
-                    orderNumber: orderData.orderNumber,
-                    customerInfo: {
-                        name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
-                        email: orderData.customer.email,
-                        contact: orderData.customer.phone
-                    },
-                    testMode: this.testMode
-                }
-            };
-
-        } catch (error) {
-            logger.error('Razorpay create order error:', error);
-
-            // In development, fall back to mock mode on any error
-            if (process.env.NODE_ENV === 'development') {
-                logger.info('Error occurred, falling back to mock mode for development');
-                return this.createMockOrder(orderData);
-            }
-
-            return {
-                success: false,
-                error: error.message || 'Failed to create payment order'
-            };
+  // Create customer
+  async createCustomer(customerData) {
+    try {
+      const customer = await razorpay.customers.create({
+        name: customerData.name,
+        email: customerData.email,
+        contact: customerData.phone,
+        notes: {
+          business_name: customerData.businessName,
+          application_id: customerData.applicationId
         }
+      });
+      return customer;
+    } catch (error) {
+      throw new Error(`Failed to create customer: ${error.message}`);
     }
+  }
 
-    // Verify payment signature
-    verifyPayment(paymentId, orderId, signature) {
-        try {
-            const body = orderId + "|" + paymentId;
-            const expectedSignature = crypto
-                .createHmac('sha256', this.keySecret)
-                .update(body.toString())
-                .digest('hex');
-
-            return expectedSignature === signature;
-        } catch (error) {
-            logger.error('Payment verification error:', error);
-            return false;
+  // Create registration payment order
+  async createRegistrationOrder(orderData) {
+    try {
+      const order = await razorpay.orders.create({
+        amount: PRICING.registration.amount * 100,
+        currency: 'INR',
+        receipt: `reg_${orderData.applicationId}`,
+        notes: {
+          type: 'registration',
+          application_id: orderData.applicationId,
+          business_name: orderData.businessName
         }
+      });
+      return order;
+    } catch (error) {
+      throw new Error(`Failed to create registration order: ${error.message}`);
     }
+  }
 
-    // Get payment details
-    async getPayment(paymentId) {
-        try {
-            if (!this.razorpay) {
-                return {
-                    success: false,
-                    error: 'Razorpay not configured'
-                };
-            }
+  // Create subscription
+  async createSubscription(subscriptionData) {
+    try {
+      const planConfig = PRICING.subscription[subscriptionData.planType];
+      if (!planConfig) {
+        throw new Error('Invalid plan type');
+      }
 
-            const payment = await this.razorpay.payments.fetch(paymentId);
-            return {
-                success: true,
-                data: payment
-            };
-        } catch (error) {
-            logger.error('Get payment error:', error);
-            return {
-                success: false,
-                error: error.message
-            };
+      const subscription = await razorpay.subscriptions.create({
+        plan_id: planConfig.id,
+        customer_id: subscriptionData.customerId,
+        quantity: 1,
+        total_count: 12,
+        notes: {
+          application_id: subscriptionData.applicationId,
+          business_name: subscriptionData.businessName
         }
+      });
+      return subscription;
+    } catch (error) {
+      throw new Error(`Failed to create subscription: ${error.message}`);
     }
+  }
 
-    // Verify webhook signature
-    verifyWebhookSignature(body, signature) {
-        try {
-            const expectedSignature = crypto
-                .createHmac('sha256', this.webhookSecret)
-                .update(body)
-                .digest('hex');
+  // Get subscription details
+  async getSubscription(subscriptionId) {
+    try {
+      const subscription = await razorpay.subscriptions.fetch(subscriptionId);
+      return subscription;
+    } catch (error) {
+      throw new Error(`Failed to fetch subscription: ${error.message}`);
+    }
+  }
 
-            return expectedSignature === signature;
-        } catch (error) {
-            logger.error('Webhook signature verification error:', error);
-            return false;
+  // Cancel subscription
+  async cancelSubscription(subscriptionId) {
+    try {
+      const subscription = await razorpay.subscriptions.cancel(subscriptionId);
+      return subscription;
+    } catch (error) {
+      throw new Error(`Failed to cancel subscription: ${error.message}`);
+    }
+  }
+
+  // Create order for product sales with route transfer
+  async createOrderWithTransfer(orderData) {
+    try {
+      const order = await razorpay.orders.create({
+        amount: orderData.amount * 100, // Convert to paise
+        currency: 'INR',
+        receipt: orderData.receipt,
+        transfers: [{
+          account: orderData.sellerAccountId,
+          amount: orderData.amount * 100, // Full amount to seller
+          currency: 'INR',
+          on_hold: 0 // Immediate transfer
+        }],
+        notes: {
+          order_id: orderData.orderId,
+          seller_id: orderData.sellerId,
+          buyer_id: orderData.buyerId
         }
+      });
+      return order;
+    } catch (error) {
+      throw new Error(`Failed to create order with transfer: ${error.message}`);
     }
+  }
 
-    // Create mock order for development
-    createMockOrder(orderData) {
-        logger.info('Creating mock Razorpay order for development');
+  // Verify payment signature
+  verifyPaymentSignature(paymentId, orderId, signature) {
+    const crypto = require('crypto');
+    const body = orderId + '|' + paymentId;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
+    
+    return expectedSignature === signature;
+  }
 
-        return {
-            success: true,
-            data: {
-                orderId: `order_MOCK${Date.now()}`,
-                amount: Math.round(orderData.total * 100),
-                currency: 'INR',
-                keyId: 'rzp_test_mock_key',
-                orderNumber: orderData.orderNumber,
-                customerInfo: {
-                    name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
-                    email: orderData.customer.email,
-                    contact: orderData.customer.phone
-                },
-                testMode: true,
-                mockMode: true
-            }
-        };
-    }
-
-    // Create refund
-    async createRefund(paymentId, amount, reason) {
-        try {
-            if (!this.razorpay) {
-                return {
-                    success: false,
-                    error: 'Razorpay not configured'
-                };
-            }
-
-            const refund = await this.razorpay.payments.refund(paymentId, {
-                amount: Math.round(amount * 100), // Convert to paise
-                notes: {
-                    reason: reason || 'Customer refund request'
-                }
-            });
-
-            logger.info('Refund created:', refund);
-            return {
-                success: true,
-                data: refund
-            };
-        } catch (error) {
-            logger.error('Create refund error:', error);
-            return {
-                success: false,
-                error: error.message
-            };
+  // Get pricing information
+  getPricing() {
+    const currentDate = new Date();
+    const launchDate = new Date('2025-10-01');
+    
+    return {
+      registration: PRICING.registration,
+      subscription: {
+        early_bird: {
+          ...PRICING.subscription.early_bird,
+          active: currentDate < launchDate
+        },
+        regular: {
+          ...PRICING.subscription.regular,
+          active: true
         }
-    }
+      },
+      currentPlan: currentDate < launchDate ? 'early_bird' : 'regular'
+    };
+  }
+
+  // Get plans (alias for getPricing)
+  getPlans() {
+    return this.getPricing().subscription;
+  }
 }
 
 module.exports = new RazorpayService();
