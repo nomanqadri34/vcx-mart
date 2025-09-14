@@ -161,14 +161,30 @@ router.post('/apply', auth, validateSellerApplication, handleValidationErrors, a
       logger.error('Failed to send admin notification email:', emailError);
     }
 
-    res.status(201).json({
-      success: true,
-      message: 'Seller application submitted successfully',
-      data: {
-        applicationId: application.applicationId,
-        status: application.status
-      }
-    });
+    // Check if payment integration is enabled
+    const requiresPayment = process.env.ENABLE_SELLER_PAYMENTS === 'true' || true; // Default to true
+    
+    if (requiresPayment) {
+      res.status(201).json({
+        success: true,
+        message: 'Seller application submitted successfully. Please complete payment to proceed.',
+        data: {
+          applicationId: application.applicationId,
+          status: application.status,
+          requiresPayment: true
+        }
+      });
+    } else {
+      res.status(201).json({
+        success: true,
+        message: 'Seller application submitted successfully',
+        data: {
+          applicationId: application.applicationId,
+          status: application.status,
+          requiresPayment: false
+        }
+      });
+    }
 
   } catch (error) {
     logger.error('Seller application submission error:', error);

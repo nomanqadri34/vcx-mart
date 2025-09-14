@@ -134,6 +134,16 @@ app.use(session({
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Root endpoint for UptimeRobot and health checks
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'VCX MART API Server',
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    version: 'v1'
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
