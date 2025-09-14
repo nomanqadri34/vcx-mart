@@ -22,9 +22,13 @@ router.post('/registration/create', protect, async (req, res) => {
     }
 
     if (application.registrationPaid) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Registration fee already paid' }
+      return res.json({
+        success: true,
+        data: {
+          alreadyPaid: true,
+          message: 'Registration fee already paid',
+          applicationId: application.applicationId
+        }
       });
     }
 

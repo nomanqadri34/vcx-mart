@@ -71,8 +71,21 @@ class RazorpayService {
         throw new Error('Invalid plan type');
       }
 
+      // Create plan first
+      const plan = await razorpay.plans.create({
+        period: 'monthly',
+        interval: 1,
+        item: {
+          name: planConfig.name,
+          amount: planConfig.amount * 100,
+          currency: 'INR',
+          description: planConfig.description
+        }
+      });
+
+      // Create subscription with the new plan
       const subscription = await razorpay.subscriptions.create({
-        plan_id: planConfig.id,
+        plan_id: plan.id,
         customer_id: subscriptionData.customerId,
         quantity: 1,
         total_count: 12,
