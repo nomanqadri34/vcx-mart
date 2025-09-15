@@ -19,6 +19,7 @@ const SellerApplicationForm = () => {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [registrationPaid, setRegistrationPaid] = useState(false)
     const [subscriptionSetup, setSubscriptionSetup] = useState(false)
+    const [applicationId, setApplicationId] = useState(null)
     const navigate = useNavigate()
 
     const {
@@ -121,6 +122,22 @@ const SellerApplicationForm = () => {
                 errorMessage = `Validation Error: ${errorMessages}`
             }
 
+            // Handle existing application error
+            if (error.response?.status === 400 && error.response?.data?.error?.applicationId) {
+                const existingAppId = error.response.data.error.applicationId
+                const status = error.response.data.error.status
+                errorMessage = `You already have a ${status} application (ID: ${existingAppId}). Please check your dashboard.`
+
+                // If in development, offer to reset
+                if (import.meta.env.DEV) {
+                    setTimeout(() => {
+                        if (confirm('Development Mode: Would you like to reset your existing application to create a new one?')) {
+                            resetExistingApplication()
+                        }
+                    }, 2000)
+                }
+            }
+
             toast.error(errorMessage)
         } finally {
             setIsSubmitting(false)
@@ -141,6 +158,19 @@ const SellerApplicationForm = () => {
                 message: 'Congratulations! Your seller application and payments are complete. We will review your application within 2-3 business days.'
             }
         })
+    }
+
+    const resetExistingApplication = async () => {
+        try {
+            const response = await api.delete('/seller/dev/reset-application')
+            if (response.data.success) {
+                toast.success('Existing application deleted. You can now submit a new application.')
+                window.location.reload()
+            }
+        } catch (error) {
+            toast.error('Failed to reset application')
+            console.error('Reset error:', error)
+        }
     }
 
 
@@ -412,6 +442,18 @@ const SellerApplicationForm = () => {
                 <div className="text-center mb-6 sm:mb-8">
                     <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Become a VCX MART Seller</h1>
                     <p className="text-sm sm:text-base text-gray-600 mt-2">Fill application → Pay registration → Setup subscription</p>
+
+                    {/* Development Reset Button */}
+                    {import.meta.env.DEV && (
+                        <div className="mt-4">
+                            <button
+                                onClick={resetExistingApplication}
+                                className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200 transition-colors"
+                            >
+                                🔄 Dev: Reset Existing Application
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Progress Steps */}

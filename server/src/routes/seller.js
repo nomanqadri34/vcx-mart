@@ -111,10 +111,21 @@ router.post('/apply', auth, validateSellerApplication, handleValidationErrors, a
     const existingApplication = await SellerApplication.findOne({ userId: req.user._id });
     if (existingApplication) {
       console.log('User already has application:', existingApplication.applicationId);
-      return res.status(400).json({
-        success: false,
-        error: { message: 'You have already submitted a seller application' }
-      });
+
+      // If application is rejected, allow resubmission
+      if (existingApplication.status === 'rejected') {
+        console.log('Previous application was rejected, allowing resubmission');
+        await SellerApplication.findByIdAndDelete(existingApplication._id);
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'You have already submitted a seller application',
+            applicationId: existingApplication.applicationId,
+            status: existingApplication.status
+          }
+        });
+      }
     }
 
     // Check if user is already a seller
@@ -849,7 +860,7 @@ router.get('/test-auth', auth, async (req, res) => {
   }
 });
 
-// Development route for quick seller approval
+// Development routes
 if (process.env.NODE_ENV === 'development') {
   // @route   POST /api/v1/seller/dev/quick-approve
   // @desc    Quick approve user as seller (Development only)
@@ -869,6 +880,36 @@ if (process.env.NODE_ENV === 'development') {
       res.status(500).json({
         success: false,
         error: { message: 'Failed to approve seller' }
+      });
+    }
+  });
+
+  // @route   DELETE /api/v1/seller/dev/reset-application
+  // @desc    Delete user's seller application for testing (Development only)
+  // @access  Private
+  router.delete('/dev/reset-application', auth, async (req, res) => {
+    try {
+      const deletedApplication = await SellerApplication.findOneAndDelete({ userId: req.user._id });
+
+      if (deletedApplication) {
+        console.log('Deleted application:', deletedApplication.applicationId);
+        res.json({
+          success: true,
+          message: 'Seller application deleted successfully',
+          deletedApplicationId: deletedApplication.applicationId
+        });
+      } else {
+        res.json({
+          success: true,
+          message: 'No existing application found to delete'
+        });
+      }
+
+    } catch (error) {
+      logger.error('Reset application error:', error);
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to reset application' }
       });
     }
   });
