@@ -10,6 +10,32 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
   const handleRegistrationPayment = async () => {
     setLoading(true);
     try {
+      // Check if user is authenticated
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        toast.error('Please login to continue');
+        return;
+      }
+
+      // Check if token is expired
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp < currentTime) {
+          toast.error('Session expired. Please login again.');
+          localStorage.removeItem('accessToken');
+          setTimeout(() => window.location.href = '/login', 2000);
+          return;
+        }
+      } catch (error) {
+        toast.error('Invalid session. Please login again.');
+        localStorage.removeItem('accessToken');
+        setTimeout(() => window.location.href = '/login', 2000);
+        return;
+      }
+
+
+
       // Create registration payment order
       const orderResponse = await subscriptionAPI.createRegistrationOrder(applicationId || 'temp_payment');
 
@@ -20,37 +46,26 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
 
       // Check if registration fee already paid
       if (orderResponse.data?.alreadyPaid) {
-        toast.success('Registration fee already paid! You can now proceed to fill the application form.');
+        toast.success('Registration fee already paid! You can now proceed to subscription setup.');
         // Store payment completion
         localStorage.setItem('registrationPaymentCompleted', 'true');
         localStorage.setItem('registrationPaymentId', 'already_paid');
-        onPaymentSuccess('paid');
+        onPaymentSuccess();
         return;
       }
 
-      // For now, simulate successful payment to avoid Razorpay issues
-      // In production, you would use actual Razorpay integration
-      toast.success('Registration payment completed successfully!');
-
-      // Store payment completion
-      localStorage.setItem('registrationPaymentCompleted', 'true');
-      localStorage.setItem('registrationPaymentId', `pay_${Date.now()}`);
-
-      onPaymentSuccess();
-
-      /* 
-      // Uncomment this for actual Razorpay integration once issues are resolved
+      // Create Razorpay payment
       const options = {
-        key: orderResponse.data.key,
-        amount: orderResponse.data.amount * 100,
-        currency: orderResponse.data.currency,
+        key: orderResponse.data.key || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderResponse.data.amount * 100, // Convert to paise
+        currency: orderResponse.data.currency || 'INR',
         name: 'VCX MART',
-        description: 'Seller Registration Fee',
+        description: 'Seller Registration Fee - ₹50',
         order_id: orderResponse.data.orderId,
         handler: async (response) => {
           try {
             const verifyResponse = await subscriptionAPI.verifyRegistrationPayment({
-              applicationId: 'temp_payment',
+              applicationId: applicationId,
               paymentId: response.razorpay_payment_id,
               orderId: response.razorpay_order_id,
               signature: response.razorpay_signature
@@ -60,7 +75,7 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
               toast.success('Registration payment completed successfully!');
               localStorage.setItem('registrationPaymentCompleted', 'true');
               localStorage.setItem('registrationPaymentId', response.razorpay_payment_id);
-              onPaymentSuccess('paid');
+              onPaymentSuccess();
             } else {
               toast.error('Payment verification failed');
             }
@@ -82,19 +97,46 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
         }
       };
 
-      if (window.Razorpay) {
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', (response) => {
+            toast.error('Payment failed: ' + response.error.description);
+          });
+          rzp.open();
+        };
+        script.onerror = () => {
+          toast.error('Failed to load payment gateway. Please check your internet connection.');
+        };
+        document.body.appendChild(script);
+      } else {
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', (response) => {
           toast.error('Payment failed: ' + response.error.description);
         });
         rzp.open();
-      } else {
-        toast.error('Payment gateway not loaded. Please refresh and try again.');
       }
-      */
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Failed to initiate payment');
+
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        toast.error('Authentication failed. Please login again.');
+        // Clear invalid token and redirect to login
+        localStorage.removeItem('accessToken');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else if (error.response?.status === 404) {
+        toast.error('Payment service not available. Please try again later.');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.error?.message || 'Invalid payment request');
+      } else {
+        toast.error('Failed to initiate payment. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -138,7 +180,7 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
         <button
           onClick={handleRegistrationPayment}
           disabled={loading}
-          className="w-full bg-orange-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-medium text-sm sm:text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          className="w-full bg-orange-600 text-white py-4 px-6 rounded-lg font-semibold text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           {loading ? (
             <div className="flex items-center justify-center">

@@ -213,15 +213,26 @@ router.post('/registration/create', protect, async (req, res) => {
       });
     }
 
-    // Create a simple payment order without requiring application
-    const orderId = `order_${Date.now()}_${req.user._id}`;
+    // Create Razorpay order for registration payment
+    const orderOptions = {
+      amount: 5000, // ₹50 in paise
+      currency: 'INR',
+      receipt: `reg_${applicationId || Date.now()}_${req.user._id}`,
+      notes: {
+        applicationId: applicationId || 'temp_payment',
+        userId: req.user._id.toString(),
+        paymentType: 'registration'
+      }
+    };
+
+    const order = await razorpay.orders.create(orderOptions);
 
     res.json({
       success: true,
       data: {
         key: process.env.RAZORPAY_KEY_ID,
-        orderId: orderId,
-        amount: 50,
+        orderId: order.id,
+        amount: 50, // Amount in rupees for display
         currency: 'INR',
         applicationId: applicationId || 'temp_payment'
       }

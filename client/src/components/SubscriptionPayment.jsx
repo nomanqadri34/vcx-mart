@@ -37,6 +37,36 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
   const createSubscription = async () => {
     setLoading(true);
     try {
+      // Check if user is authenticated
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        toast.error('Please login to continue');
+        return;
+      }
+
+      // Check if token is expired
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp < currentTime) {
+          toast.error('Session expired. Please login again.');
+          localStorage.removeItem('accessToken');
+          setTimeout(() => window.location.href = '/login', 2000);
+          return;
+        }
+      } catch (error) {
+        toast.error('Invalid session. Please login again.');
+        localStorage.removeItem('accessToken');
+        setTimeout(() => window.location.href = '/login', 2000);
+        return;
+      }
+
+      // Check if applicationId is provided
+      if (!applicationId) {
+        toast.error('Application ID is required for subscription');
+        return;
+      }
+
 
 
       const response = await subscriptionAPI.createSubscription(applicationId);
@@ -55,7 +85,22 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
       }
     } catch (error) {
       console.error('Subscription creation failed:', error);
-      toast.error('Failed to create subscription');
+
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        toast.error('Authentication failed. Please login again.');
+        // Clear invalid token and redirect to login
+        localStorage.removeItem('accessToken');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else if (error.response?.status === 404) {
+        toast.error('Subscription service not available. Please try again later.');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.error?.message || 'Invalid request');
+      } else {
+        toast.error('Failed to create subscription. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

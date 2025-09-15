@@ -425,6 +425,7 @@ const SellerApplicationForm = () => {
                             </div>
                         ) : (
                             <SubscriptionPayment
+                                applicationId={applicationId}
                                 onPaymentSuccess={handleSubscriptionSuccess}
                             />
                         )}
@@ -443,17 +444,7 @@ const SellerApplicationForm = () => {
                     <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Become a VCX MART Seller</h1>
                     <p className="text-sm sm:text-base text-gray-600 mt-2">Fill application → Pay registration → Setup subscription</p>
 
-                    {/* Development Reset Button */}
-                    {import.meta.env.DEV && (
-                        <div className="mt-4">
-                            <button
-                                onClick={resetExistingApplication}
-                                className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-md hover:bg-red-200 transition-colors"
-                            >
-                                🔄 Dev: Reset Existing Application
-                            </button>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Progress Steps */}
