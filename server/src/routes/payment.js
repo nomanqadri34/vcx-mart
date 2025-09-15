@@ -20,23 +20,73 @@ router.post('/test', (req, res) => {
 // @access  Private
 router.post('/seller-registration', auth, async (req, res) => {
   try {
-    const subscription = await razorpay.subscriptions.create({
-      plan_id: 'plan_RH8bsJ6AQXHVD9',
-      customer_notify: 1,
-      total_count: 12,
+    const { affiliateCode } = req.body;
+
+    // First create a customer
+    const customer = await razorpay.customers.create({
+      name: `${req.user.firstName} ${req.user.lastName}`,
+      email: req.user.email,
+      contact: req.user.phone || '9876543210',
       notes: {
         userId: req.user._id.toString(),
-        userEmail: req.user.email
+        affiliateCode: affiliateCode || ''
       }
     });
+
+    console.log('Customer created:', customer.id);
+
+    // Create subscription with customer
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: 'plan_RH8bsJ6AQXHVD9',
+      customer_id: customer.id,
+      customer_notify: 1,
+      total_count: 12,
+      addons: [],
+      notes: {
+        userId: req.user._id.toString(),
+        userEmail: req.user.email,
+        affiliateCode: affiliateCode || ''
+      }
+    });
+
+    console.log('Subscription created:', subscription.id);
+
+    // Create a payment link for the subscription
+    const paymentLink = await razorpay.paymentLink.create({
+      amount: 55000, // ₹550 in paise
+      currency: 'INR',
+      description: 'VCX MART Seller Registration & First Month Subscription',
+      customer: {
+        name: `${req.user.firstName} ${req.user.lastName}`,
+        email: req.user.email,
+        contact: req.user.phone || '9876543210'
+      },
+      notify: {
+        sms: true,
+        email: true
+      },
+      reminder_enable: true,
+      callback_url: `${process.env.CLIENT_URL}/seller/payment-success`,
+      callback_method: 'get',
+      notes: {
+        userId: req.user._id.toString(),
+        subscriptionId: subscription.id,
+        affiliateCode: affiliateCode || ''
+      }
+    });
+
+    console.log('Payment link created:', paymentLink.short_url);
 
     res.json({
       success: true,
       data: {
         subscriptionId: subscription.id,
-        shortUrl: subscription.short_url,
-        amount: 500,
-        currency: 'INR'
+        customerId: customer.id,
+        paymentLinkId: paymentLink.id,
+        shortUrl: paymentLink.short_url,
+        amount: 550,
+        currency: 'INR',
+        status: subscription.status
       }
     });
 
@@ -44,7 +94,7 @@ router.post('/seller-registration', auth, async (req, res) => {
     console.error('Subscription error:', error);
     res.status(500).json({
       success: false,
-      error: { message: error.message }
+      error: { message: error.message || 'Failed to create subscription' }
     });
   }
 });
@@ -93,7 +143,7 @@ router.post('/create-seller-plan', auth, async (req, res) => {
 router.post('/create-seller-subscription', auth, async (req, res) => {
   try {
     const { planId } = req.body;
-    
+
     if (!razorpay) {
       return res.status(500).json({ success: false, error: { message: 'Payment gateway not available' } });
     }
@@ -136,6 +186,50 @@ router.post('/verify-seller-registration', auth, async (req, res) => {
   });
 });
 
+// @route   POST /api/v1/payment/webhook
+// @desc    Handle Razorpay webhooks
+// @access  Public
+router.post('/webhook', async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const body = JSON.stringify(req.body);
 
+    // Verify webhook signature
+    const expectedSignature = require('crypto')
+      .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET || 'webhook_secret')
+      .update(body)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.log('Webhook signature mismatch');
+      // Don't reject in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+    }
+
+    const event = req.body;
+
+    // Handle subscription events
+    if (event.event === 'subscription.charged') {
+      const subscription = event.payload.subscription.entity;
+      const payment = event.payload.payment.entity;
+
+      console.log('Subscription charged:', {
+        subscriptionId: subscription.id,
+        paymentId: payment.id,
+        amount: payment.amount
+      });
+
+      // Update user subscription status in database
+      // This would typically update the user's seller status
+    }
+
+    res.json({ status: 'ok' });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
 
 module.exports = router;

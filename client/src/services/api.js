@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://vcx-mart.onrender.com/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
     headers: {
         'Content-Type': 'application/json'
     },
@@ -171,6 +171,19 @@ export const adminAPI = {
     getAnalytics: (params) => apiResponse(() => api.get('/admin/analytics', { params })),
 };
 
+// Subscription API functions
+export const subscriptionAPI = {
+    createRegistrationOrder: (applicationId) => apiResponse(() => api.post('/subscription/registration/create', { applicationId })),
+    verifyRegistrationPayment: (paymentData) => apiResponse(() => api.post('/subscription/registration/verify', paymentData)),
+    createSubscription: (applicationId) => apiResponse(() => api.post('/subscription/create', { applicationId })),
+    getSubscriptionStatus: (applicationId) => apiResponse(() => api.get(`/subscription/status/${applicationId}`)),
+    refreshSubscription: (applicationId) => apiResponse(() => api.post(`/subscription/refresh/${applicationId}`)),
+    resetUserSubscription: () => apiResponse(() => api.post('/subscription/reset-user-subscription')),
+    testPaymentLink: () => apiResponse(() => api.post('/subscription/test-payment-link')),
+    getDebugInfo: (applicationId) => apiResponse(() => api.get(`/subscription/debug/${applicationId}`)),
+    getAllSubscriptions: (params) => apiResponse(() => api.get('/subscription/admin/all', { params }))
+};
+
 // Product API functions
 export const productAPI = {
     getProducts: (params) => api.get('/products', { params }),
@@ -221,6 +234,16 @@ export const notificationAPI = {
 export const checkoutAPI = {
     validate: (checkoutData) => api.post('/checkout/validate', checkoutData),
     createOrder: (orderData) => api.post('/checkout/create-order', orderData),
+};
+
+
+
+// Affiliate API functions
+export const affiliateAPI = {
+    applyAffiliate: (applicationData) => apiResponse(() => api.post('/affiliate/apply', applicationData)),
+    getAffiliateStats: () => apiResponse(() => api.get('/affiliate/stats')),
+    getCommissions: (params) => apiResponse(() => api.get('/affiliate/commissions', { params })),
+    generateReferralLink: (productId) => apiResponse(() => api.post('/affiliate/referral-link', { productId })),
 };
 
 // Export the main api instance and wrapper

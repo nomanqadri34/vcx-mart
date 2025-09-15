@@ -113,7 +113,7 @@ const BecomeSeller = () => {
       setIsLoading(true);
       setError("");
 
-      const response = await fetch("/api/v1/seller/apply", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/seller/apply`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,17 +145,17 @@ const BecomeSeller = () => {
   };
 
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Business Information</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <h3 className="text-base sm:text-lg font-medium text-gray-900">Business Information</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Business Name *
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.businessName ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("businessName", {
@@ -164,16 +164,16 @@ const BecomeSeller = () => {
             })}
           />
           {errors.businessName && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessName.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Business Type *
           </label>
           <select
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.businessType ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("businessType", { required: "Business type is required" })}
@@ -184,16 +184,16 @@ const BecomeSeller = () => {
             ))}
           </select>
           {errors.businessType && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessType.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessType.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Business Category *
           </label>
           <select
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.businessCategory ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("businessCategory", { required: "Business category is required" })}
@@ -204,19 +204,19 @@ const BecomeSeller = () => {
             ))}
           </select>
           {errors.businessCategory && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessCategory.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessCategory.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Established Year *
           </label>
           <input
             type="number"
             min="1900"
             max={new Date().getFullYear()}
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.establishedYear ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("establishedYear", {
@@ -226,20 +226,20 @@ const BecomeSeller = () => {
             })}
           />
           {errors.establishedYear && (
-            <p className="mt-1 text-sm text-red-600">{errors.establishedYear.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.establishedYear.message}</p>
           )}
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="sm:col-span-2">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700">
           Business Description *
         </label>
         <textarea
-          rows={4}
-          className={`mt-1 block w-full px-3 py-2 border ${
+          rows={3}
+          className={`mt-1 block w-full px-3 py-2 text-sm border ${
             errors.businessDescription ? "border-red-300" : "border-gray-300"
-          } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
+          } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 resize-none`}
           placeholder="Describe your business, products, and services..."
           {...register("businessDescription", {
             required: "Business description is required",
@@ -247,24 +247,24 @@ const BecomeSeller = () => {
           })}
         />
         {errors.businessDescription && (
-          <p className="mt-1 text-sm text-red-600">{errors.businessDescription.message}</p>
+          <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessDescription.message}</p>
         )}
       </div>
     </div>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Contact Information</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <h3 className="text-base sm:text-lg font-medium text-gray-900">Contact Information</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Business Email *
           </label>
           <input
             type="email"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.businessEmail ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("businessEmail", {
@@ -276,17 +276,17 @@ const BecomeSeller = () => {
             })}
           />
           {errors.businessEmail && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessEmail.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessEmail.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Business Phone *
           </label>
           <input
             type="tel"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.businessPhone ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("businessPhone", {
@@ -298,67 +298,67 @@ const BecomeSeller = () => {
             })}
           />
           {errors.businessPhone && (
-            <p className="mt-1 text-sm text-red-600">{errors.businessPhone.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessPhone.message}</p>
           )}
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="sm:col-span-2">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700">
           Business Address *
         </label>
         <textarea
           rows={3}
-          className={`mt-1 block w-full px-3 py-2 border ${
+          className={`mt-1 block w-full px-3 py-2 text-sm border ${
             errors.businessAddress ? "border-red-300" : "border-gray-300"
-          } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
+          } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 resize-none`}
           {...register("businessAddress", { required: "Business address is required" })}
         />
         {errors.businessAddress && (
-          <p className="mt-1 text-sm text-red-600">{errors.businessAddress.message}</p>
+          <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessAddress.message}</p>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 sm:col-span-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             City *
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.city ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("city", { required: "City is required" })}
           />
           {errors.city && (
-            <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.city.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             State *
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.state ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("state", { required: "State is required" })}
           />
           {errors.state && (
-            <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.state.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 lg:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Pincode *
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.pincode ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             {...register("pincode", {
@@ -370,32 +370,32 @@ const BecomeSeller = () => {
             })}
           />
           {errors.pincode && (
-            <p className="mt-1 text-sm text-red-600">{errors.pincode.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.pincode.message}</p>
           )}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center">
+      <div className="space-y-4 sm:col-span-2">
+        <div className="flex items-start">
           <input
             id="hasPhysicalStore"
             type="checkbox"
-            className="h-4 w-4 text-saffron-600 focus:ring-saffron-500 border-gray-300 rounded"
+            className="h-4 w-4 text-saffron-600 focus:ring-saffron-500 border-gray-300 rounded mt-0.5"
             {...register("hasPhysicalStore")}
           />
-          <label htmlFor="hasPhysicalStore" className="ml-2 block text-sm text-gray-900">
+          <label htmlFor="hasPhysicalStore" className="ml-2 block text-xs sm:text-sm text-gray-900">
             I have a physical store
           </label>
         </div>
 
         {watch("hasPhysicalStore") && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
               Store Address
             </label>
             <textarea
               rows={3}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500"
+              className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 resize-none"
               {...register("storeAddress")}
             />
           </div>
@@ -405,17 +405,17 @@ const BecomeSeller = () => {
   );
 
   const renderStep3 = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Legal & Financial Information</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <h3 className="text-base sm:text-lg font-medium text-gray-900">Legal & Financial Information</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             GST Number
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.gstNumber ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             placeholder="22AAAAA0000A1Z5"
@@ -427,17 +427,17 @@ const BecomeSeller = () => {
             })}
           />
           {errors.gstNumber && (
-            <p className="mt-1 text-sm text-red-600">{errors.gstNumber.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.gstNumber.message}</p>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             PAN Number *
           </label>
           <input
             type="text"
-            className={`mt-1 block w-full px-3 py-2 border ${
+            className={`mt-1 block w-full px-3 py-2 text-sm border ${
               errors.panNumber ? "border-red-300" : "border-gray-300"
             } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
             placeholder="ABCDE1234F"
@@ -450,54 +450,54 @@ const BecomeSeller = () => {
             })}
           />
           {errors.panNumber && (
-            <p className="mt-1 text-sm text-red-600">{errors.panNumber.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.panNumber.message}</p>
           )}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h4 className="text-md font-medium text-gray-900">Bank Account Details</h4>
+      <div className="space-y-4 sm:col-span-2">
+        <h4 className="text-sm sm:text-base font-medium text-gray-900">Bank Account Details</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="sm:col-span-2 md:col-span-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
               Account Holder Name *
             </label>
             <input
               type="text"
-              className={`mt-1 block w-full px-3 py-2 border ${
+              className={`mt-1 block w-full px-3 py-2 text-sm border ${
                 errors.accountHolderName ? "border-red-300" : "border-gray-300"
               } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
               {...register("accountHolderName", { required: "Account holder name is required" })}
             />
             {errors.accountHolderName && (
-              <p className="mt-1 text-sm text-red-600">{errors.accountHolderName.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.accountHolderName.message}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="sm:col-span-2 md:col-span-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
               Bank Name *
             </label>
             <input
               type="text"
-              className={`mt-1 block w-full px-3 py-2 border ${
+              className={`mt-1 block w-full px-3 py-2 text-sm border ${
                 errors.bankName ? "border-red-300" : "border-gray-300"
               } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
               {...register("bankName", { required: "Bank name is required" })}
             />
             {errors.bankName && (
-              <p className="mt-1 text-sm text-red-600">{errors.bankName.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.bankName.message}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="sm:col-span-2 md:col-span-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
               Account Number *
             </label>
             <input
               type="text"
-              className={`mt-1 block w-full px-3 py-2 border ${
+              className={`mt-1 block w-full px-3 py-2 text-sm border ${
                 errors.bankAccountNumber ? "border-red-300" : "border-gray-300"
               } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
               {...register("bankAccountNumber", {
@@ -506,17 +506,17 @@ const BecomeSeller = () => {
               })}
             />
             {errors.bankAccountNumber && (
-              <p className="mt-1 text-sm text-red-600">{errors.bankAccountNumber.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.bankAccountNumber.message}</p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="sm:col-span-2 md:col-span-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
               IFSC Code *
             </label>
             <input
               type="text"
-              className={`mt-1 block w-full px-3 py-2 border ${
+              className={`mt-1 block w-full px-3 py-2 text-sm border ${
                 errors.bankIFSC ? "border-red-300" : "border-gray-300"
               } rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500`}
               placeholder="SBIN0001234"
@@ -529,18 +529,18 @@ const BecomeSeller = () => {
               })}
             />
             {errors.bankIFSC && (
-              <p className="mt-1 text-sm text-red-600">{errors.bankIFSC.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.bankIFSC.message}</p>
             )}
           </div>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="sm:col-span-2">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700">
           Expected Monthly Revenue
         </label>
         <select
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500"
+          className="mt-1 block w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-saffron-500 focus:border-saffron-500"
           {...register("expectedMonthlyRevenue")}
         >
           <option value="">Select revenue range</option>
@@ -550,28 +550,28 @@ const BecomeSeller = () => {
         </select>
       </div>
 
-      <div className="flex items-start">
+      <div className="flex items-start sm:col-span-2">
         <div className="flex items-center h-5">
           <input
             id="agreeToTerms"
             type="checkbox"
-            className="h-4 w-4 text-saffron-600 focus:ring-saffron-500 border-gray-300 rounded"
+            className="h-4 w-4 text-saffron-600 focus:ring-saffron-500 border-gray-300 rounded mt-0.5"
             {...register("agreeToTerms", { required: "You must agree to the terms" })}
           />
         </div>
-        <div className="ml-3 text-sm">
+        <div className="ml-3 text-xs sm:text-sm">
           <label htmlFor="agreeToTerms" className="text-gray-700">
             I agree to the{" "}
-            <a href="/seller-terms" className="text-saffron-600 hover:text-saffron-500">
+            <a href="/seller-terms" className="text-saffron-600 hover:text-saffron-500 underline">
               Seller Terms & Conditions
             </a>{" "}
             and{" "}
-            <a href="/seller-policy" className="text-saffron-600 hover:text-saffron-500">
+            <a href="/seller-policy" className="text-saffron-600 hover:text-saffron-500 underline">
               Seller Policy
             </a>
           </label>
           {errors.agreeToTerms && (
-            <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms.message}</p>
+            <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.agreeToTerms.message}</p>
           )}
         </div>
       </div>
@@ -579,23 +579,23 @@ const BecomeSeller = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Become a Seller</h1>
-            <p className="mt-1 text-sm text-gray-600">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Become a Seller</h1>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">
               Join our marketplace and start selling your products
             </p>
           </div>
 
           {/* Progress Bar */}
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
             <div className="flex items-center">
               {[1, 2, 3].map((step) => (
                 <React.Fragment key={step}>
                   <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    className={`flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-medium ${
                       step <= currentStep
                         ? "bg-saffron-600 text-white"
                         : "bg-gray-300 text-gray-600"
@@ -605,7 +605,7 @@ const BecomeSeller = () => {
                   </div>
                   {step < 3 && (
                     <div
-                      className={`flex-1 h-1 mx-4 ${
+                      className={`flex-1 h-0.5 sm:h-1 mx-2 sm:mx-4 ${
                         step < currentStep ? "bg-saffron-600" : "bg-gray-300"
                       }`}
                     />
@@ -613,16 +613,16 @@ const BecomeSeller = () => {
                 </React.Fragment>
               ))}
             </div>
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>Business Info</span>
-              <span>Contact Details</span>
-              <span>Legal & Financial</span>
+            <div className="flex justify-between mt-2 text-xs sm:text-sm text-gray-600">
+              <span className="text-center">Business Info</span>
+              <span className="text-center">Contact Details</span>
+              <span className="text-center">Legal & Financial</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
             {error && (
-              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="mb-4 sm:mb-6 bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-3 rounded-md text-xs sm:text-sm">
                 {error}
               </div>
             )}
@@ -631,12 +631,12 @@ const BecomeSeller = () => {
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
 
-            <div className="mt-8 flex justify-between">
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
               <button
                 type="button"
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className={`px-4 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                className={`px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-md text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${
                   currentStep === 1
                     ? "text-gray-400 cursor-not-allowed"
                     : "text-gray-700 hover:bg-gray-50"
@@ -649,7 +649,7 @@ const BecomeSeller = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-4 py-2 bg-saffron-600 text-white rounded-md text-sm font-medium hover:bg-saffron-700"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-saffron-600 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-saffron-700 transition-colors focus:outline-none focus:ring-2 focus:ring-saffron-500 focus:ring-offset-2"
                 >
                   Next
                 </button>
@@ -657,13 +657,20 @@ const BecomeSeller = () => {
                 <button
                   type="submit"
                   disabled={isLoading || !isValid}
-                  className={`px-6 py-2 rounded-md text-sm font-medium ${
+                  className={`px-4 sm:px-6 py-2 sm:py-3 rounded-md text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                     isLoading || !isValid
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-saffron-600 text-white hover:bg-saffron-700"
+                      ? "bg-gray-400 text-white cursor-not-allowed focus:ring-gray-400"
+                      : "bg-saffron-600 text-white hover:bg-saffron-700 focus:ring-saffron-500"
                   }`}
                 >
-                  {isLoading ? "Submitting..." : "Submit Application"}
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Submitting...
+                    </div>
+                  ) : (
+                    "Submit Application"
+                  )}
                 </button>
               )}
             </div>

@@ -10,6 +10,7 @@ import {
   ArrowRightIcon,
   StarIcon,
 } from "@heroicons/react/24/outline";
+import SubscriptionPricing from "../../components/SubscriptionPricing";
 
 const BecomeSeller = () => {
   const { user } = useAuth();
@@ -118,10 +119,11 @@ const BecomeSeller = () => {
 
   const handleStartSelling = () => {
     if (!user) {
-      navigate("/login", { state: { from: "/seller/apply-new" } });
+      navigate("/login", { state: { from: "/seller/payment" } });
       return;
     }
-    navigate("/seller/apply-new");
+    // Redirect to payment flow first, then application
+    navigate("/seller/payment");
   };
 
   const handleAffiliateApply = () => {
@@ -196,57 +198,123 @@ const BecomeSeller = () => {
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-gray-600">
-              No hidden fees, no commissions - just a low monthly store fee
+              No hidden fees, no commissions - just monthly platform fee
             </p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <div key={index} className={`relative rounded-lg border-2 p-8 ${
-                plan.popular ? 'border-saffron-500 bg-saffron-50' : 'border-gray-200 bg-white'
-              }`}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-saffron-500 text-white px-4 py-2 rounded-full text-sm font-medium">
-                      Limited Time
-                    </span>
-                  </div>
-                )}
+          
+          {/* Pricing Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Early Bird Plan */}
+            <div className="relative bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-8">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                  {new Date() <= new Date('2025-10-01') ? 'Limited Time' : 'Expired'}
+                </span>
+              </div>
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.title}</h3>
-                  <p className="text-gray-600 mb-4">{plan.subtitle}</p>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    <span className="text-gray-600">{plan.period}</span>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Registration: {plan.registrationFee}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Early Bird Plan</h3>
+                  <p className="text-gray-600 mb-6">Available until October 1st</p>
+                  <div className="mb-4">
+                    <div className="text-5xl font-bold text-green-600 mb-2">₹550</div>
+                    <div className="text-sm text-gray-600">
+                      <span className="block">₹500/month + ₹50 registration</span>
+                      <span className="text-xs">Total first payment</span>
                     </div>
                   </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center">
-                        <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
+                  <ul className="text-left space-y-3 mb-8">
+                    <li className="flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span>0% commission on sales</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span>Direct payments to your account</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span>Lifetime pricing guarantee</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                      <span>Priority support</span>
+                    </li>
                   </ul>
-                  {plan.available && (
-                    <button
-                      onClick={handleStartSelling}
-                      className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                        plan.popular
-                          ? 'bg-saffron-500 text-white hover:bg-saffron-600'
-                          : 'bg-gray-900 text-white hover:bg-gray-800'
-                      }`}
-                    >
-                      Get Started
-                    </button>
-                  )}
-                  {!plan.available && (
-                    <div className="text-gray-500 font-medium">Coming Soon</div>
-                  )}
+                  <button
+                    onClick={handleStartSelling}
+                    className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                      new Date() <= new Date('2025-10-01')
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    }`}
+                    disabled={new Date() > new Date('2025-10-01')}
+                  >
+                    {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Offer Expired'}
+                  </button>
+                  <p className="text-sm text-gray-500 mt-3">
+                    {new Date() <= new Date('2025-10-01') ? 'Save ₹300/month forever!' : 'This offer has expired'}
+                  </p>
                 </div>
+            </div>
+
+            {/* Regular Plan */}
+            <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-8 ${
+              new Date() >= new Date('2024-10-01') ? 'relative' : ''
+            }`}>
+              {new Date() > new Date('2025-10-01') && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                    Current Plan
+                  </span>
+                </div>
+              )}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Regular Plan</h3>
+                <p className="text-gray-600 mb-6">
+                  {new Date() <= new Date('2025-10-01') ? 'Starting October 2025' : 'Standard pricing'}
+                </p>
+                <div className="mb-4">
+                  <div className="text-5xl font-bold text-orange-600 mb-2">₹850</div>
+                  <div className="text-sm text-gray-600">
+                    <span className="block">₹800/month + ₹50 registration</span>
+                    <span className="text-xs">Total first payment</span>
+                  </div>
+                </div>
+                <ul className="text-left space-y-3 mb-8">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-orange-500 mr-3" />
+                    <span>0% commission on sales</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-orange-500 mr-3" />
+                    <span>Direct payments to your account</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-orange-500 mr-3" />
+                    <span>Full seller dashboard</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-orange-500 mr-3" />
+                    <span>Standard support</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={handleStartSelling}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                    new Date() <= new Date('2025-10-01')
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : 'bg-orange-600 text-white hover:bg-orange-700'
+                  }`}
+                  disabled={new Date() <= new Date('2025-10-01')}
+                >
+                  {new Date() <= new Date('2025-10-01') ? 'Available Oct 2025' : 'Pay ₹850 & Start Selling'}
+                </button>
+                {new Date() <= new Date('2025-10-01') && (
+                  <p className="text-sm text-gray-500 mt-3">
+                    ₹300 more than Early Bird
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
@@ -373,17 +441,17 @@ const BecomeSeller = () => {
             Limited Time: Early Bird Pricing!
           </h2>
           <p className="text-xl text-white/90 mb-2">
-            Register now for lifetime ₹500/month pricing
+            Register now for lifetime ₹500/month pricing + ₹50 registration
           </p>
           <p className="text-lg text-white/80 mb-8">
-            Price increases to ₹800/month after store opens for buyers
+            Price increases to ₹800/month + ₹50 registration after October 1st
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleStartSelling}
               className="inline-flex items-center px-8 py-4 bg-white text-saffron-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-lg"
             >
-              Start Selling - ₹550
+              {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Pay ₹850 & Start Selling'}
               <ArrowRightIcon className="ml-2 h-5 w-5" />
             </button>
             <button

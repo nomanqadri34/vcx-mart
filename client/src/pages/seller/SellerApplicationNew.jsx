@@ -46,12 +46,32 @@ const SellerApplicationNew = () => {
         'Automotive', 'Health', 'Toys', 'Jewelry', 'Food & Beverages'
     ]
 
-    // Load Razorpay script
+    // Load Razorpay script and check for payment completion
     useEffect(() => {
         const script = document.createElement('script')
         script.src = 'https://checkout.razorpay.com/v1/checkout.js'
         script.async = true
         document.body.appendChild(script)
+
+        // Check URL parameters for payment success
+        const urlParams = new URLSearchParams(window.location.search)
+        const step = urlParams.get('step')
+        const paymentStatus = urlParams.get('payment')
+        
+        // Check localStorage for payment completion
+        const paymentCompleted = localStorage.getItem('sellerPaymentCompleted')
+        const paymentId = localStorage.getItem('sellerPaymentId')
+        
+        if (paymentCompleted === 'true' && paymentId) {
+            setApplicationData(prev => ({ ...prev, paymentCompleted: true, paymentId }))
+            if (step === '2' && paymentStatus === 'success') {
+                setCurrentStep(2)
+                toast.success('Payment completed! Please complete your application.')
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname)
+            }
+        }
+
         return () => document.body.removeChild(script)
     }, [])
 
@@ -76,19 +96,24 @@ const SellerApplicationNew = () => {
 
         console.log('Opening subscription payment:', subscription)
 
-        // Open Razorpay subscription payment page
+        // Store affiliate code and subscription details in application data
+        setApplicationData(prev => ({ 
+            ...prev, 
+            affiliateCode,
+            subscriptionId: subscription.subscriptionId,
+            paymentLinkId: subscription.paymentLinkId
+        }))
+
+        // Open Razorpay payment page
         if (subscription.shortUrl) {
-            window.open(subscription.shortUrl, '_blank')
-            toast.success('Subscription created! Complete payment in the new tab.')
+            // Store subscription details in localStorage for payment success page
+            localStorage.setItem('sellerSubscriptionId', subscription.subscriptionId)
+            localStorage.setItem('sellerPaymentLinkId', subscription.paymentLinkId || '')
             
-            // Simulate completion after user returns
-            setTimeout(() => {
-                setApplicationData({ ...applicationData, paymentCompleted: true })
-                toast.success('Payment completed! Please complete your application.')
-                setCurrentStep(2)
-            }, 5000)
+            // Open payment in same tab for better UX
+            window.location.href = subscription.shortUrl
         } else {
-            toast.error('Failed to create subscription')
+            toast.error('Failed to create payment link. Please try again.')
         }
     }
 
@@ -175,7 +200,10 @@ const SellerApplicationNew = () => {
 
                             <div className="space-y-3">
                                 <button
-                                    onClick={() => handlePayment(applicationData.affiliateCode)}
+                                    onClick={() => {
+                                        const affiliateCode = document.querySelector('input[name="affiliateCode"]')?.value || '';
+                                        handlePayment(affiliateCode);
+                                    }}
                                     disabled={isSubmitting}
                                     className="w-full bg-saffron-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-saffron-700 disabled:opacity-50"
                                 >

@@ -19,6 +19,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import MobileBottomNav from "./components/MobileBottomNav";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardRouter from "./components/DashboardRouter";
+import LaunchCountdown from "./components/LaunchCountdown";
 
 // Public Pages
 import HomePage from "./pages/HomePage";
@@ -95,6 +96,9 @@ import OrderDetail from "./pages/user/OrderDetail";
 import BecomeSeller from "./pages/seller/BecomeSeller";
 import SellerApplication from "./pages/seller/SellerApplication";
 import SellerApplicationNew from "./pages/seller/SellerApplicationNew";
+import PaymentSuccess from "./pages/seller/PaymentSuccess";
+import SubscriptionSuccess from "./pages/seller/SubscriptionSuccess";
+import SellerPaymentFlow from "./pages/seller/SellerPaymentFlow";
 import SellerDashboardReal from "./pages/seller/SellerDashboard";
 import ProductManagement from "./pages/seller/ProductManagement";
 import AddProduct from "./pages/seller/AddProduct";
@@ -114,6 +118,7 @@ import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminOrders from "./pages/admin/AdminOrders";
 import SellerApplications from "./pages/admin/SellerApplications";
 import SellerApplicationDetail from "./pages/admin/SellerApplicationDetail";
+import AffiliateApplication from "./pages/seller/AffiliateApplication";
 
 
 const queryClient = new QueryClient({
@@ -136,6 +141,7 @@ function App() {
                 <Router>
                   <div className="min-h-screen bg-white">
                     <Header />
+                    <LaunchCountdown />
                     <main className="min-h-[calc(100vh-64px)] pb-16 md:pb-0">
                       <Routes>
                         {/* Public Routes */}
@@ -252,6 +258,14 @@ function App() {
                         />
                         {/* Seller Routes */}
                         <Route
+                          path="/seller/payment"
+                          element={
+                            <ProtectedRoute allowedRoles={["user"]}>
+                              <SellerPaymentFlow />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
                           path="/seller/apply"
                           element={
                             <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
@@ -264,6 +278,22 @@ function App() {
                           element={
                             <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
                               <SellerApplicationNew />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/payment-success"
+                          element={
+                            <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
+                              <PaymentSuccess />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/subscription-success"
+                          element={
+                            <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
+                              <SubscriptionSuccess />
                             </ProtectedRoute>
                           }
                         />
@@ -296,6 +326,10 @@ function App() {
                                 <Route
                                   path="analytics"
                                   element={<SellerAnalytics />}
+                                />
+                                <Route
+                                  path="affiliate/apply"
+                                  element={<AffiliateApplication />}
                                 />
                               </Routes>
                             </ProtectedRoute>

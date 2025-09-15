@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import api from "../../services/api";
 import DocumentUpload from "../../components/DocumentUpload";
+import SubscriptionPayment from "../../components/SubscriptionPayment";
+import RegistrationPayment from "../../components/RegistrationPayment";
 import { uploadToCloudinary } from "../../utils/cloudinary";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -16,10 +18,15 @@ import toast from "react-hot-toast";
 const SellerApplication = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documents, setDocuments] = useState({});
+  const [applicationId, setApplicationId] = useState(null);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
+  const paymentCompleted = location.state?.paymentCompleted || false;
 
-  // Check authentication and seller status
+  // Check authentication, seller status, and payment completion
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       toast.error("Please login to access seller application");
@@ -27,8 +34,11 @@ const SellerApplication = () => {
     } else if (user?.role === "seller") {
       toast.info("You are already a seller");
       navigate("/seller/dashboard");
+    } else if (!paymentCompleted) {
+      toast.error("Please complete payment setup first");
+      navigate("/seller/payment");
     }
-  }, [loading, isAuthenticated, user, navigate]);
+  }, [loading, isAuthenticated, user, navigate, paymentCompleted]);
 
   const {
     register,
@@ -160,16 +170,24 @@ const SellerApplication = () => {
         agreeToTerms: data.termsAccepted,
       };
 
-      await api.post("/seller/apply", applicationData, {
+      const response = await api.post("/seller/apply", applicationData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      toast.success(
-        "Application submitted successfully! We will review it within 2-3 business days."
-      );
-      navigate("/user/dashboard");
+      if (response.data?.data?.applicationId) {
+        setApplicationId(response.data.data.applicationId);
+        setShowRegistration(true);
+        toast.success(
+          "Application submitted successfully! Please complete the registration payment."
+        );
+      } else {
+        toast.success(
+          "Application submitted successfully! We will review it within 2-3 business days."
+        );
+        navigate("/user/dashboard");
+      }
     } catch (error) {
       console.error("Application submission error:", error);
       let errorMessage = "Failed to submit application. Please try again.";
@@ -221,13 +239,73 @@ const SellerApplication = () => {
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <form
-            id="seller-application-form"
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-8"
-          >
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Registration Fee Card */}
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-6 text-white">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">Registration Fee</h3>
+              <div className="mb-4">
+                <p className="text-4xl font-bold">₹50</p>
+                <p className="text-sm opacity-90">One-time payment</p>
+              </div>
+              <div className="text-sm">
+                <p className="opacity-90">• Account activation</p>
+                <p className="opacity-90">• Platform access</p>
+                <p className="opacity-90">• Seller verification</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Platform Fee Card */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">Monthly Platform Fee</h3>
+              <div className="mb-4">
+                <p className="text-4xl font-bold">
+                  {new Date() <= new Date('2025-10-01') ? '₹500' : '₹800'}
+                </p>
+                <p className="text-sm opacity-90">
+                  {new Date() <= new Date('2025-10-01') 
+                    ? 'Early Bird (Before Oct 1st)' 
+                    : 'Regular (From Oct 1st)'
+                  }
+                </p>
+              </div>
+              <div className="text-sm">
+                <p className="opacity-90">• 0% commission on sales</p>
+                <p className="opacity-90">• Direct payments to you</p>
+                <p className="opacity-90">• Full seller dashboard</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Show registration payment first */}
+        {showRegistration && applicationId ? (
+          <RegistrationPayment 
+            applicationId={applicationId}
+            onPaymentSuccess={() => {
+              setShowRegistration(false);
+              setShowSubscription(true);
+            }}
+          />
+        ) : showSubscription && applicationId ? (
+          <SubscriptionPayment 
+            applicationId={applicationId}
+            onPaymentSuccess={() => {
+              toast.success('Setup completed! Your seller account will be activated shortly.');
+              navigate('/user/dashboard');
+            }}
+          />
+        ) : (
+          /* Form */
+          <div className="bg-white shadow-lg rounded-lg p-6">
+            <form
+              id="seller-application-form"
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-8"
+            >
             {/* Business Information Section */}
             <div>
               <div className="flex items-center mb-4">
@@ -735,6 +813,7 @@ const SellerApplication = () => {
             </div>
           </form>
         </div>
+        )}
       </div>
     </div>
   );

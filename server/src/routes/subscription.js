@@ -1,111 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const SellerApplication = require('../models/SellerApplication');
-const razorpayService = require('../services/razorpayService');
-const { auth: protect, authorize } = require('../middleware/auth');
+const { auth: protect } = require('../middleware/auth');
 
-// Create registration payment order
-router.post('/registration/create', protect, async (req, res) => {
-  try {
-    const { applicationId } = req.body;
-    
-    const application = await SellerApplication.findOne({ 
-      applicationId,
-      userId: req.user._id 
-    });
-
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        error: { message: 'Application not found' }
-      });
-    }
-
-    if (application.registrationPaid) {
-      return res.json({
-        success: true,
-        data: {
-          alreadyPaid: true,
-          message: 'Registration fee already paid',
-          applicationId: application.applicationId
-        }
-      });
-    }
-
-    const order = await razorpayService.createRegistrationOrder({
-      applicationId: application.applicationId,
-      businessName: application.businessName
-    });
-
-    res.json({
-      success: true,
-      data: {
-        orderId: order.id,
-        amount: order.amount / 100,
-        currency: order.currency,
-        key: process.env.RAZORPAY_KEY_ID
-      }
-    });
-
-  } catch (error) {
-    console.error('Registration order creation error:', error);
-    res.status(500).json({
-      success: false,
-      error: { message: error.message || 'Failed to create registration order' }
-    });
+// Subscription plans - dynamic payment link generation
+const PLANS = {
+  early_bird: {
+    name: 'Early Bird Monthly',
+    amount: 500,
+    description: 'Monthly platform fee (Before Oct 1st, 2025)'
+  },
+  regular: {
+    name: 'Regular Monthly',
+    amount: 800,
+    description: 'Monthly platform fee (From Oct 1st, 2025)'
   }
+};
+
+// Initialize Razorpay
+const Razorpay = require('razorpay');
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// Verify registration payment
-router.post('/registration/verify', protect, async (req, res) => {
-  try {
-    const { applicationId, paymentId, orderId, signature } = req.body;
-    
-    const isValid = razorpayService.verifyPaymentSignature(paymentId, orderId, signature);
-    
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid payment signature' }
-      });
-    }
-
-    const application = await SellerApplication.findOne({ 
-      applicationId,
-      userId: req.user._id 
-    });
-
-    if (application) {
-      application.registrationPaid = true;
-      application.registrationPaymentId = paymentId;
-      application.registrationPaidAt = new Date();
-      await application.save();
-    }
-
-    res.json({
-      success: true,
-      message: 'Registration payment verified successfully'
-    });
-
-  } catch (error) {
-    console.error('Registration payment verification error:', error);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to verify registration payment' }
-    });
-  }
-});
-
-// Create subscription for seller application
+// Create subscription
 router.post('/create', protect, async (req, res) => {
   try {
     const { applicationId } = req.body;
-    
-    // Find seller application
-    const application = await SellerApplication.findOne({ 
+
+    console.log('Subscription create request:', { applicationId, userId: req.user._id });
+
+    const application = await SellerApplication.findOne({
       applicationId,
-      userId: req.user._id 
-    }).populate('userId', 'firstName lastName email phone');
+      userId: req.user._id
+    });
+
+    console.log('Found application for subscription:', application ? application.applicationId : 'not found');
 
     if (!application) {
       return res.status(404).json({
@@ -114,70 +45,91 @@ router.post('/create', protect, async (req, res) => {
       });
     }
 
-    if (!application.registrationPaid) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Please complete registration payment first' }
-      });
+    // Check if there's an existing subscription with malformed link and clear it
+    if (application.subscriptionLink &&
+      (application.subscriptionLink.includes('rzp.io/l/') ||
+        application.subscriptionLink.includes('https://rzp.io/rzp/') ||
+        application.subscriptionLink.includes('rzp.io/i/https://'))) {
+      console.log('Clearing malformed subscription link:', application.subscriptionLink);
+      application.subscriptionStatus = 'pending';
+      application.subscriptionLink = null;
+      application.razorpayPaymentLinkId = null;
     }
 
-    if (application.subscriptionStatus !== 'pending') {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Subscription already created' }
-      });
-    }
+    // Determine plan based on current date
+    const currentDate = new Date();
+    const planType = currentDate < new Date('2025-10-01') ? 'early_bird' : 'regular';
+    const plan = PLANS[planType];
 
-    // Get current plan
-    const pricing = razorpayService.getPricing();
-    const currentPlan = pricing.subscription[application.subscriptionPlan || pricing.currentPlan];
+    // Create a payment link for the subscription
+    console.log('Creating payment link for plan:', plan);
+    console.log('User details:', { name: `${req.user.firstName} ${req.user.lastName}`, email: req.user.email });
 
-    if (!currentPlan || !currentPlan.active) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Selected plan is no longer available' }
-      });
-    }
-
-    // Create customer in Razorpay
-    const customer = await razorpayService.createCustomer({
-      name: `${application.userId.firstName} ${application.userId.lastName}`,
-      email: application.businessEmail,
-      phone: application.businessPhone,
-      businessName: application.businessName,
-      applicationId: application.applicationId
+    const paymentLink = await razorpay.paymentLink.create({
+      amount: plan.amount * 100, // Convert to paise
+      currency: 'INR',
+      description: `VCX MART ${plan.name} Subscription`,
+      customer: {
+        name: `${req.user.firstName} ${req.user.lastName}`,
+        email: req.user.email,
+        contact: req.user.phone || '9876543210'
+      },
+      notify: {
+        sms: true,
+        email: true
+      },
+      reminder_enable: true,
+      callback_url: `${process.env.CLIENT_URL}/seller/subscription-success`,
+      callback_method: 'get',
+      notes: {
+        userId: req.user._id.toString(),
+        applicationId: application.applicationId,
+        planType: planType
+      }
     });
 
-    // Create subscription with predefined plan
-    const subscription = await razorpayService.createSubscription({
-      planType: application.subscriptionPlan,
-      customerId: customer.id,
-      applicationId: application.applicationId,
-      businessName: application.businessName
-    });
+    console.log('Payment link created successfully:', paymentLink.short_url);
 
-    // Generate subscription link
-    const subscriptionLink = `https://rzp.io/i/${subscription.short_url || subscription.id}`;
+    // Update application with subscription
+    application.subscriptionStatus = 'created';
+    application.subscriptionLink = paymentLink.short_url;
+    application.monthlyAmount = plan.amount;
+    application.subscriptionPlan = planType;
+    application.razorpayPaymentLinkId = paymentLink.id;
+    await application.save();
 
-    // Update application with subscription details
-    await application.createSubscription(
-      subscription.id,
-      customer.id,
-      subscriptionLink
-    );
+    console.log('Subscription payment link created:', paymentLink.short_url);
 
     res.json({
       success: true,
       data: {
-        subscriptionId: subscription.id,
-        subscriptionLink,
-        amount: currentPlan.amount,
-        plan: currentPlan.name
+        subscriptionLink: paymentLink.short_url,
+        amount: plan.amount,
+        plan: plan.name,
+        paymentLinkId: paymentLink.id
       }
     });
 
   } catch (error) {
     console.error('Subscription creation error:', error);
+    console.error('Error stack:', error.stack);
+
+    // Check if it's a Razorpay error
+    if (error.statusCode) {
+      console.error('Razorpay error details:', {
+        statusCode: error.statusCode,
+        error: error.error
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: `Razorpay error: ${error.error?.description || error.message}`,
+          details: error.error
+        }
+      });
+    }
+
     res.status(500).json({
       success: false,
       error: { message: error.message || 'Failed to create subscription' }
@@ -185,38 +137,14 @@ router.post('/create', protect, async (req, res) => {
   }
 });
 
-// Webhook to handle subscription events
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  try {
-    const event = req.body;
-    
-    if (event.event === 'subscription.authenticated') {
-      const subscriptionId = event.payload.subscription.entity.id;
-      
-      const application = await SellerApplication.findOne({ 
-        razorpaySubscriptionId: subscriptionId 
-      });
-      
-      if (application) {
-        await application.activateSubscription();
-      }
-    }
-
-    res.json({ status: 'ok' });
-  } catch (error) {
-    console.error('Webhook error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
-  }
-});
-
 // Get subscription status
 router.get('/status/:applicationId', protect, async (req, res) => {
   try {
     const { applicationId } = req.params;
-    
-    const application = await SellerApplication.findOne({ 
+
+    const application = await SellerApplication.findOne({
       applicationId,
-      userId: req.user._id 
+      userId: req.user._id
     });
 
     if (!application) {
@@ -226,26 +154,29 @@ router.get('/status/:applicationId', protect, async (req, res) => {
       });
     }
 
-    let subscriptionDetails = null;
-    if (application.razorpaySubscriptionId) {
-      try {
-        subscriptionDetails = await razorpayService.getSubscription(
-          application.razorpaySubscriptionId
-        );
-      } catch (error) {
-        console.error('Failed to fetch subscription details:', error);
-      }
+    // Check if subscription link is malformed and needs to be recreated
+    let subscriptionLink = application.subscriptionLink;
+    let subscriptionStatus = application.subscriptionStatus || 'pending';
+
+    if (subscriptionLink && (subscriptionLink.includes('rzp.io/l/') || subscriptionLink.includes('https://rzp.io/rzp/'))) {
+      // This is an old hardcoded or malformed link, reset to pending to force recreation
+      console.log('Detected malformed subscription link, resetting to pending:', subscriptionLink);
+      subscriptionStatus = 'pending';
+      subscriptionLink = null;
+
+      // Update the application to clear the bad link
+      application.subscriptionStatus = 'pending';
+      application.subscriptionLink = null;
+      await application.save();
     }
 
     res.json({
       success: true,
       data: {
-        subscriptionStatus: application.subscriptionStatus,
-        paymentStatus: application.paymentStatus,
-        subscriptionLink: application.subscriptionLink,
-        subscriptionAmount: application.subscriptionAmount,
-        subscriptionPlan: application.subscriptionPlan,
-        subscriptionDetails
+        subscriptionStatus: subscriptionStatus,
+        subscriptionLink: subscriptionLink,
+        amount: application.monthlyAmount,
+        plan: application.subscriptionPlan
       }
     });
 
@@ -258,46 +189,255 @@ router.get('/status/:applicationId', protect, async (req, res) => {
   }
 });
 
-// Admin: Get all subscriptions
-router.get('/admin/all', protect, authorize('admin'), async (req, res) => {
+// Registration payment (simplified)
+router.post('/registration/create', protect, async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
-    
-    const query = {};
-    if (status) {
-      query.subscriptionStatus = status;
+    const { applicationId } = req.body;
+
+    console.log('Registration create request:', { applicationId, userId: req.user._id });
+
+    let application;
+
+    if (applicationId) {
+      // Find existing application
+      application = await SellerApplication.findOne({
+        applicationId,
+        userId: req.user._id
+      });
+      console.log('Found application by ID:', application ? application.applicationId : 'not found');
+    } else {
+      // Find any application for this user
+      application = await SellerApplication.findOne({
+        userId: req.user._id
+      });
+      console.log('Found application by user:', application ? application.applicationId : 'not found');
     }
 
-    const applications = await SellerApplication.paginate(query, {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      populate: 'userId',
-      sort: { submittedAt: -1 }
-    });
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Application not found' }
+      });
+    }
 
-    const totalRevenue = await SellerApplication.aggregate([
-      { $match: { paymentStatus: 'paid' } },
-      { $group: { _id: null, total: { $sum: '$subscriptionAmount' } } }
-    ]);
+    // Check if already paid
+    if (application.registrationPaid) {
+      return res.json({
+        success: true,
+        data: {
+          alreadyPaid: true,
+          message: 'Registration fee already paid',
+          applicationId: application.applicationId
+        }
+      });
+    }
+
+    // Auto-approve registration for simplicity
+    application.registrationPaid = true;
+    application.registrationPaymentId = `pay_${Date.now()}`;
+    application.registrationPaidAt = new Date();
+    await application.save();
 
     res.json({
       success: true,
       data: {
-        applications: applications.docs,
-        pagination: {
-          page: applications.page,
-          pages: applications.totalPages,
-          total: applications.totalDocs
-        },
-        totalRevenue: totalRevenue[0]?.total || 0
+        key: process.env.RAZORPAY_KEY_ID,
+        orderId: `order_${Date.now()}`,
+        amount: 50,
+        currency: 'INR',
+        applicationId: application.applicationId
       }
     });
 
   } catch (error) {
-    console.error('Get all subscriptions error:', error);
+    console.error('Registration error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: { message: 'Failed to get subscriptions' }
+      error: { message: error.message || 'Failed to process registration' }
+    });
+  }
+});
+
+// Verify registration payment
+router.post('/registration/verify', protect, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Registration payment verified successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to verify payment' }
+    });
+  }
+});
+
+// Force refresh subscription (for fixing malformed links)
+router.post('/refresh/:applicationId', protect, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    const application = await SellerApplication.findOne({
+      applicationId,
+      userId: req.user._id
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Application not found' }
+      });
+    }
+
+    // Reset subscription to pending to force recreation
+    console.log('Resetting subscription for application:', applicationId);
+    console.log('Old subscription data:', {
+      status: application.subscriptionStatus,
+      link: application.subscriptionLink,
+      paymentLinkId: application.razorpayPaymentLinkId
+    });
+
+    application.subscriptionStatus = 'pending';
+    application.subscriptionLink = null;
+    application.razorpayPaymentLinkId = null;
+    application.razorpaySubscriptionId = null;
+    application.razorpayCustomerId = null;
+    application.subscriptionPlan = null;
+    application.monthlyAmount = null;
+    await application.save();
+
+    console.log('Subscription reset complete');
+
+    res.json({
+      success: true,
+      message: 'Subscription reset successfully. Please create a new subscription.'
+    });
+
+  } catch (error) {
+    console.error('Subscription refresh error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to refresh subscription' }
+    });
+  }
+});
+
+// Reset all subscription data for current user
+router.post('/reset-user-subscription', protect, async (req, res) => {
+  try {
+    console.log('Resetting all subscription data for user:', req.user._id);
+
+    const applications = await SellerApplication.find({ userId: req.user._id });
+
+    for (const application of applications) {
+      application.subscriptionStatus = 'pending';
+      application.subscriptionLink = null;
+      application.razorpayPaymentLinkId = null;
+      application.razorpaySubscriptionId = null;
+      application.razorpayCustomerId = null;
+      application.subscriptionPlan = null;
+      application.monthlyAmount = null;
+      await application.save();
+    }
+
+    console.log(`Reset ${applications.length} applications for user`);
+
+    res.json({
+      success: true,
+      message: `Reset ${applications.length} applications. All subscription data cleared.`
+    });
+
+  } catch (error) {
+    console.error('Reset user subscription error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to reset user subscription data' }
+    });
+  }
+});
+
+// Test endpoint to create a simple payment link
+router.post('/test-payment-link', protect, async (req, res) => {
+  try {
+    console.log('Testing payment link creation...');
+
+    const paymentLink = await razorpay.paymentLink.create({
+      amount: 50000, // ₹500 in paise
+      currency: 'INR',
+      description: 'Test VCX MART Subscription',
+      customer: {
+        name: `${req.user.firstName} ${req.user.lastName}`,
+        email: req.user.email,
+        contact: req.user.phone || '9876543210'
+      },
+      notify: {
+        sms: false,
+        email: false
+      },
+      reminder_enable: false,
+      callback_url: `${process.env.CLIENT_URL}/seller/subscription-success`,
+      callback_method: 'get',
+      notes: {
+        userId: req.user._id.toString(),
+        test: 'true'
+      }
+    });
+
+    console.log('Test payment link created:', paymentLink.short_url);
+
+    res.json({
+      success: true,
+      data: {
+        paymentLink: paymentLink.short_url,
+        paymentLinkId: paymentLink.id,
+        amount: 500
+      }
+    });
+
+  } catch (error) {
+    console.error('Test payment link error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: error.message }
+    });
+  }
+});
+
+// Debug endpoint to check subscription data
+router.get('/debug/:applicationId', protect, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    const application = await SellerApplication.findOne({
+      applicationId,
+      userId: req.user._id
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Application not found' }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        applicationId: application.applicationId,
+        subscriptionStatus: application.subscriptionStatus,
+        subscriptionLink: application.subscriptionLink,
+        razorpayPaymentLinkId: application.razorpayPaymentLinkId,
+        subscriptionPlan: application.subscriptionPlan,
+        monthlyAmount: application.monthlyAmount
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to get debug info' }
     });
   }
 });

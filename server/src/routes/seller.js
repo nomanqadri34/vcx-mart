@@ -100,9 +100,12 @@ const handleValidationErrors = (req, res, next) => {
 // @access  Private
 router.post('/apply', auth, validateSellerApplication, handleValidationErrors, async (req, res) => {
   try {
+    console.log('Seller application request from user:', req.user._id);
+
     // Check if user already has an application
     const existingApplication = await SellerApplication.findOne({ userId: req.user._id });
     if (existingApplication) {
+      console.log('User already has application:', existingApplication.applicationId);
       return res.status(400).json({
         success: false,
         error: { message: 'You have already submitted a seller application' }
@@ -125,6 +128,8 @@ router.post('/apply', auth, validateSellerApplication, handleValidationErrors, a
 
     const application = new SellerApplication(applicationData);
     await application.save();
+
+    console.log('New application created:', application.applicationId);
 
     // Send confirmation email to applicant
     try {
@@ -163,7 +168,7 @@ router.post('/apply', auth, validateSellerApplication, handleValidationErrors, a
 
     // Check if payment integration is enabled
     const requiresPayment = process.env.ENABLE_SELLER_PAYMENTS === 'true' || true; // Default to true
-    
+
     if (requiresPayment) {
       res.status(201).json({
         success: true,
@@ -785,8 +790,8 @@ router.get('/products/low-stock', auth, async (req, res) => {
       seller: sellerId,
       status: 'active'
     })
-    .select('name sku sizes price')
-    .lean();
+      .select('name sku sizes price')
+      .lean();
 
     // Filter products with low stock based on total inventory
     const lowStockProducts = products

@@ -233,18 +233,19 @@ const sellerApplicationSchema = new mongoose.Schema({
   subscriptionPlan: {
     type: String,
     enum: ['early_bird', 'regular'],
-    default: function() {
+    default: function () {
       return new Date() < new Date('2025-10-01') ? 'early_bird' : 'regular';
     }
   },
   monthlyAmount: {
     type: Number,
-    default: function() {
+    default: function () {
       return new Date() < new Date('2025-10-01') ? 500 : 800;
     }
   },
   razorpaySubscriptionId: String,
   razorpayCustomerId: String,
+  razorpayPaymentLinkId: String,
   subscriptionStatus: {
     type: String,
     enum: ['pending', 'created', 'authenticated', 'active', 'paused', 'cancelled', 'completed'],

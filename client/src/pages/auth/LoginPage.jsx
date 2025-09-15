@@ -63,7 +63,7 @@ const LoginPage = () => {
           });
           return;
         }
-        
+
         // Redirect to intended destination or dashboard
         navigate(from, { replace: true });
       } else {
@@ -78,41 +78,45 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = async (credentialResponse) => {
-    console.log("🔍 Google login initiated:", credentialResponse);
     try {
       setIsLoading(true);
       setError("");
 
       if (credentialResponse.credential) {
-        console.log("✅ Credential received, decoding...");
-        // Decode the JWT token to get user info
         const decoded = jwtDecode(credentialResponse.credential);
-        console.log("✅ Token decoded:", {
-          email: decoded.email,
-          name: decoded.name,
-        });
-
-        console.log("🚀 Calling backend googleAuth...");
-        // Call the backend Google OAuth endpoint
         const result = await googleAuth(credentialResponse.credential, "web");
 
-        console.log("📥 Backend response:", result);
-
         if (result && result.success) {
-          console.log("✅ Login successful, redirecting...");
-          // Redirect to intended destination or dashboard
           navigate(from, { replace: true });
         } else {
-          console.log("❌ Login failed:", result?.error);
           setError(result?.error || "Google login failed. Please try again.");
         }
       } else {
-        console.log("❌ No credential in response");
         setError("No credential received from Google");
       }
     } catch (err) {
-      console.error("💥 Google login error:", err);
+      console.error("Login error:", err);
       setError(`Google login failed: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const result = await login("demo@vcxmart.com", "demo123456", "web");
+
+      if (result && result.success) {
+        navigate(from, { replace: true });
+      } else {
+        setError(result?.error || "Demo login failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Demo login error:", err);
+      setError("Demo login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -167,9 +171,8 @@ const LoginPage = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 border ${
-                    errors.email ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 border ${errors.email ? "border-red-300" : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your email"
                   {...register("email", {
                     required: "Email is required",
@@ -201,9 +204,8 @@ const LoginPage = () => {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${errors.password ? "border-red-300" : "border-gray-300"
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-saffron-500 focus:border-saffron-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your password"
                   {...register("password", {
                     required: "Password is required",
@@ -264,11 +266,10 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={!isValid || isLoading}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                !isValid || isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-saffron-600 to-green-600 hover:from-saffron-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-saffron-500 transition-all duration-200"
-              }`}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${!isValid || isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-saffron-600 to-green-600 hover:from-saffron-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-saffron-500 transition-all duration-200"
+                }`}
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -292,6 +293,8 @@ const LoginPage = () => {
                 </span>
               </div>
             </div>
+
+
 
             {/* Google OAuth Login */}
             {import.meta.env.VITE_ENABLE_GOOGLE_AUTH === "true" &&

@@ -23,24 +23,24 @@ const CartPage = () => {
     console.log('CartPage: Items is array?', Array.isArray(items));
     console.log('CartPage: Type of items:', typeof items);
 
-    // Load cart on mount and auth changes
-    useEffect(() => {
-        if (isAuthenticated) {
-            console.log('CartPage: Loading cart...');
-            loadCart();
-        }
-    }, [isAuthenticated, loadCart]);
+    // Load cart on mount and auth changes (disabled to prevent vanishing items)
+    // useEffect(() => {
+    //     if (isAuthenticated) {
+    //         console.log('CartPage: Loading cart...');
+    //         loadCart();
+    //     }
+    // }, [isAuthenticated, loadCart]);
 
-    // Listen for cart updates
-    useEffect(() => {
-        const handleCartUpdate = () => {
-            console.log('CartPage: Cart updated, reloading...');
-            loadCart();
-        };
+    // Listen for cart updates (removed automatic reload to prevent vanishing items)
+    // useEffect(() => {
+    //     const handleCartUpdate = () => {
+    //         console.log('CartPage: Cart updated, reloading...');
+    //         loadCart();
+    //     };
 
-        window.addEventListener('cart-updated', handleCartUpdate);
-        return () => window.removeEventListener('cart-updated', handleCartUpdate);
-    }, [loadCart]);
+    //     window.addEventListener('cart-updated', handleCartUpdate);
+    //     return () => window.removeEventListener('cart-updated', handleCartUpdate);
+    // }, [loadCart]);
 
     // Listen for checkout completion and clear cart
     useEffect(() => {

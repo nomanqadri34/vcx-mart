@@ -7,13 +7,18 @@ import {
   ClockIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
+  CreditCardIcon,
+  StarIcon,
 } from "@heroicons/react/24/outline";
+import { subscriptionAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 
 const SellerApplications = () => {
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [subscriptionStats, setSubscriptionStats] = useState({});
   const [filters, setFilters] = useState({
     status: "all",
     search: "",
@@ -24,6 +29,7 @@ const SellerApplications = () => {
   useEffect(() => {
     fetchApplications();
     fetchStats();
+    fetchSubscriptionStats();
   }, [filters]);
 
   const fetchApplications = async () => {
@@ -36,7 +42,8 @@ const SellerApplications = () => {
         limit: filters.limit,
       });
 
-      const response = await fetch(`/api/v1/seller/applications?${queryParams}`, {
+      const baseURL = process.env.REACT_APP_API_URL || 'https://vcx-mart.onrender.com/api/v1';
+      const response = await fetch(`${baseURL}/seller/applications?${queryParams}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
@@ -58,7 +65,8 @@ const SellerApplications = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/v1/seller/applications/stats", {
+      const baseURL = process.env.REACT_APP_API_URL || 'https://vcx-mart.onrender.com/api/v1';
+      const response = await fetch(`${baseURL}/seller/applications/stats`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
@@ -70,6 +78,41 @@ const SellerApplications = () => {
       }
     } catch (err) {
       console.error("Fetch stats error:", err);
+    }
+  };
+
+  const fetchSubscriptionStats = async () => {
+    try {
+      const response = await subscriptionAPI.getPlans();
+      if (response.success) {
+        setSubscriptionStats(response.data);
+      }
+    } catch (err) {
+      console.error("Fetch subscription stats error:", err);
+    }
+  };
+
+  const handleApproveWithSubscription = async (applicationId) => {
+    try {
+      const baseURL = process.env.REACT_APP_API_URL || 'https://vcx-mart.onrender.com/api/v1';
+      const response = await fetch(`${baseURL}/seller/applications/${applicationId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: JSON.stringify({ requiresSubscription: true })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Application approved! Seller will be notified to complete subscription.');
+        fetchApplications();
+      } else {
+        toast.error(result.error?.message || 'Failed to approve application');
+      }
+    } catch (err) {
+      toast.error('Failed to approve application');
     }
   };
 
@@ -128,6 +171,101 @@ const SellerApplications = () => {
           <p className="mt-2 text-gray-600">
             Manage and review seller applications
           </p>
+        </div>
+
+        {/* Payment Flow */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Seller Onboarding Payment Flow</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Step 1: Registration */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+              <div className="text-center">
+                <div className="bg-white bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                  <span className="text-sm font-bold">1</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Registration Fee</h3>
+                <div className="mb-3">
+                  <p className="text-2xl font-bold">₹50</p>
+                  <p className="text-xs opacity-90">One-time payment</p>
+                </div>
+                <div className="text-xs">
+                  <p className="opacity-90">• Account activation</p>
+                  <p className="opacity-90">• Platform access</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Subscription */}
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+              <div className="text-center">
+                <div className="bg-white bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                  <span className="text-sm font-bold">2</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Monthly Autopay</h3>
+                <div className="mb-3">
+                  <p className="text-2xl font-bold">
+                    {new Date() <= new Date('2025-10-01') ? '₹500' : '₹800'}
+                  </p>
+                  <p className="text-xs opacity-90">
+                    {new Date() <= new Date('2025-10-01') ? 'Early Bird' : 'Regular'} Plan
+                  </p>
+                </div>
+                <div className="text-xs">
+                  <p className="opacity-90">• 0% commission</p>
+                  <p className="opacity-90">• Direct payments</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Application */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+              <div className="text-center">
+                <div className="bg-white bg-opacity-20 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                  <span className="text-sm font-bold">3</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Submit Application</h3>
+                <div className="mb-3">
+                  <p className="text-2xl font-bold">✓</p>
+                  <p className="text-xs opacity-90">Complete setup</p>
+                </div>
+                <div className="text-xs">
+                  <p className="opacity-90">• Business details</p>
+                  <p className="opacity-90">• Document upload</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Total First Payment: ₹{50 + (new Date() <= new Date('2025-10-01') ? 500 : 800)} 
+              (₹50 registration + ₹{new Date() <= new Date('2025-10-01') ? 500 : 800} first month)
+            </p>
+          </div>
+        </div>
+
+        {/* Subscription Revenue Card */}
+        <div className="bg-gradient-to-r from-saffron-500 to-orange-600 rounded-lg p-6 mb-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Subscription Revenue</h3>
+              <div className="flex items-center space-x-4">
+                <div>
+                  <p className="text-2xl font-bold">₹{(subscriptionStats.totalRevenue || 0).toLocaleString()}</p>
+                  <p className="text-sm opacity-90">Total Revenue</p>
+                </div>
+                <div>
+                  <p className="text-xl font-semibold">{subscriptionStats.activeSubscriptions || 0}</p>
+                  <p className="text-sm opacity-90">Active Subscriptions</p>
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm opacity-90 mb-1">
+                <span className="block">Early Bird: ₹{((subscriptionStats.planARevenue || 0)).toLocaleString()}</span>
+                <span className="block">Regular: ₹{((subscriptionStats.planBRevenue || 0)).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -346,6 +484,24 @@ const SellerApplications = () => {
                           <EyeIcon className="h-4 w-4 mr-1" />
                           View
                         </Link>
+                        {application.status === 'pending' && (
+                          <button
+                            onClick={() => handleApproveWithSubscription(application._id)}
+                            className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            <StarIcon className="h-4 w-4 mr-1" />
+                            Approve
+                          </button>
+                        )}
+                        {application.subscriptionStatus && (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            application.subscriptionStatus === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {application.subscriptionStatus === 'active' ? 'Subscribed' : 'Pending Payment'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
