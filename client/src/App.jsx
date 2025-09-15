@@ -96,6 +96,7 @@ import OrderDetail from "./pages/user/OrderDetail";
 import BecomeSeller from "./pages/seller/BecomeSeller";
 import SellerApplication from "./pages/seller/SellerApplication";
 import SellerApplicationNew from "./pages/seller/SellerApplicationNew";
+import SellerApplicationForm from "./pages/seller/SellerApplicationForm";
 import PaymentSuccess from "./pages/seller/PaymentSuccess";
 import SubscriptionSuccess from "./pages/seller/SubscriptionSuccess";
 import SellerPaymentFlow from "./pages/seller/SellerPaymentFlow";
@@ -267,6 +268,14 @@ function App() {
                         />
                         <Route
                           path="/seller/apply"
+                          element={
+                            <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
+                              <SellerApplicationForm />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/apply-old"
                           element={
                             <ProtectedRoute allowedRoles={["user", "seller", "admin"]}>
                               <SellerApplication />

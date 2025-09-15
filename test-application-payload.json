@@ -1,0 +1,19 @@
+{
+  "businessName": "Test Business",
+  "businessType": "Individual/Proprietorship",
+  "businessCategory": "Others",
+  "businessDescription": "This is a test business description that meets the minimum character requirement of 10 characters. We provide quality products and services to our customers.",
+  "establishedYear": 2024,
+  "businessEmail": "test@testbusiness.com",
+  "businessPhone": "9876543210",
+  "businessAddress": "123 Test Street, Test Area",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "pincode": "400001",
+  "bankAccountNumber": "1234567890123",
+  "bankIFSC": "SBIN0001234",
+  "bankName": "State Bank of India",
+  "accountHolderName": "Test User",
+  "panNumber": "ABCDE1234F",
+  "agreeToTerms": true
+}

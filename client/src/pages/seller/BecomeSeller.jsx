@@ -119,11 +119,11 @@ const BecomeSeller = () => {
 
   const handleStartSelling = () => {
     if (!user) {
-      navigate("/login", { state: { from: "/seller/payment" } });
+      navigate("/login", { state: { from: "/seller/apply" } });
       return;
     }
-    // Redirect to payment flow first, then application
-    navigate("/seller/payment");
+    // Redirect to new application flow: Application → Registration → Subscription
+    navigate("/seller/apply");
   };
 
   const handleAffiliateApply = () => {
@@ -201,7 +201,7 @@ const BecomeSeller = () => {
               No hidden fees, no commissions - just monthly platform fee
             </p>
           </div>
-          
+
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Early Bird Plan */}
@@ -211,55 +211,53 @@ const BecomeSeller = () => {
                   {new Date() <= new Date('2025-10-01') ? 'Limited Time' : 'Expired'}
                 </span>
               </div>
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Early Bird Plan</h3>
-                  <p className="text-gray-600 mb-6">Available until October 1st</p>
-                  <div className="mb-4">
-                    <div className="text-5xl font-bold text-green-600 mb-2">₹550</div>
-                    <div className="text-sm text-gray-600">
-                      <span className="block">₹500/month + ₹50 registration</span>
-                      <span className="text-xs">Total first payment</span>
-                    </div>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Early Bird Plan</h3>
+                <p className="text-gray-600 mb-6">Available until October 1st</p>
+                <div className="mb-4">
+                  <div className="text-5xl font-bold text-green-600 mb-2">₹550</div>
+                  <div className="text-sm text-gray-600">
+                    <span className="block">₹500/month + ₹50 registration</span>
+                    <span className="text-xs">Total first payment</span>
                   </div>
-                  <ul className="text-left space-y-3 mb-8">
-                    <li className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span>0% commission on sales</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span>Direct payments to your account</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span>Lifetime pricing guarantee</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                      <span>Priority support</span>
-                    </li>
-                  </ul>
-                  <button
-                    onClick={handleStartSelling}
-                    className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                      new Date() <= new Date('2025-10-01')
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                    }`}
-                    disabled={new Date() > new Date('2025-10-01')}
-                  >
-                    {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Offer Expired'}
-                  </button>
-                  <p className="text-sm text-gray-500 mt-3">
-                    {new Date() <= new Date('2025-10-01') ? 'Save ₹300/month forever!' : 'This offer has expired'}
-                  </p>
                 </div>
+                <ul className="text-left space-y-3 mb-8">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                    <span>0% commission on sales</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Direct payments to your account</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Lifetime pricing guarantee</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Priority support</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={handleStartSelling}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() <= new Date('2025-10-01')
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    }`}
+                  disabled={new Date() > new Date('2025-10-01')}
+                >
+                  {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Offer Expired'}
+                </button>
+                <p className="text-sm text-gray-500 mt-3">
+                  {new Date() <= new Date('2025-10-01') ? 'Save ₹300/month forever!' : 'This offer has expired'}
+                </p>
+              </div>
             </div>
 
             {/* Regular Plan */}
-            <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-8 ${
-              new Date() >= new Date('2024-10-01') ? 'relative' : ''
-            }`}>
+            <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-8 ${new Date() >= new Date('2024-10-01') ? 'relative' : ''
+              }`}>
               {new Date() > new Date('2025-10-01') && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <span className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
@@ -299,11 +297,10 @@ const BecomeSeller = () => {
                 </ul>
                 <button
                   onClick={handleStartSelling}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                    new Date() <= new Date('2025-10-01')
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() <= new Date('2025-10-01')
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                       : 'bg-orange-600 text-white hover:bg-orange-700'
-                  }`}
+                    }`}
                   disabled={new Date() <= new Date('2025-10-01')}
                 >
                   {new Date() <= new Date('2025-10-01') ? 'Available Oct 2025' : 'Pay ₹850 & Start Selling'}

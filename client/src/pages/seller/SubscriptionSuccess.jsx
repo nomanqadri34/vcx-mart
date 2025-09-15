@@ -19,32 +19,32 @@ const SubscriptionSuccess = () => {
                 if (paymentId && paymentLinkId) {
                     // Subscription payment successful
                     toast.success('Subscription activated successfully!')
-                    
+
                     // Store subscription completion
                     localStorage.setItem('subscriptionCompleted', 'true')
                     localStorage.setItem('subscriptionPaymentId', paymentId)
-                    
+
                     setTimeout(() => {
                         navigate('/seller/dashboard')
                     }, 2000)
                 } else if (paymentId) {
                     // Payment successful but no link ID
                     toast.success('Subscription payment completed!')
-                    
+
                     localStorage.setItem('subscriptionCompleted', 'true')
                     localStorage.setItem('subscriptionPaymentId', paymentId)
-                    
+
                     setTimeout(() => {
                         navigate('/seller/dashboard')
                     }, 2000)
                 } else {
                     toast.error('Subscription verification failed')
-                    navigate('/seller/payment')
+                    navigate('/seller/apply')
                 }
             } catch (error) {
                 console.error('Subscription verification error:', error)
                 toast.error('Subscription verification failed')
-                navigate('/seller/payment')
+                navigate('/seller/apply')
             } finally {
                 setIsVerifying(false)
             }

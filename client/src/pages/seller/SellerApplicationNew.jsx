@@ -27,10 +27,10 @@ const SellerApplicationNew = () => {
     } = useForm()
 
     const steps = [
-        { id: 1, name: 'Payment', icon: CurrencyRupeeIcon },
-        { id: 2, name: 'Business Info', icon: BuildingOfficeIcon },
-        { id: 3, name: 'Documents', icon: DocumentTextIcon },
-        { id: 4, name: 'Payment Details', icon: CreditCardIcon },
+        { id: 1, name: 'Business Info', icon: BuildingOfficeIcon },
+        { id: 2, name: 'Documents', icon: DocumentTextIcon },
+        { id: 3, name: 'Payment Details', icon: CreditCardIcon },
+        { id: 4, name: 'Registration Fee', icon: CurrencyRupeeIcon },
         { id: 5, name: 'Review & Submit', icon: CheckCircleIcon }
     ]
 
@@ -57,11 +57,11 @@ const SellerApplicationNew = () => {
         const urlParams = new URLSearchParams(window.location.search)
         const step = urlParams.get('step')
         const paymentStatus = urlParams.get('payment')
-        
+
         // Check localStorage for payment completion
-        const paymentCompleted = localStorage.getItem('sellerPaymentCompleted')
-        const paymentId = localStorage.getItem('sellerPaymentId')
-        
+        const paymentCompleted = localStorage.getItem('sellerPaymentCompleted') || localStorage.getItem('registrationPaymentCompleted')
+        const paymentId = localStorage.getItem('sellerPaymentId') || localStorage.getItem('registrationPaymentId')
+
         if (paymentCompleted === 'true' && paymentId) {
             setApplicationData(prev => ({ ...prev, paymentCompleted: true, paymentId }))
             if (step === '2' && paymentStatus === 'success') {
@@ -97,8 +97,8 @@ const SellerApplicationNew = () => {
         console.log('Opening subscription payment:', subscription)
 
         // Store affiliate code and subscription details in application data
-        setApplicationData(prev => ({ 
-            ...prev, 
+        setApplicationData(prev => ({
+            ...prev,
             affiliateCode,
             subscriptionId: subscription.subscriptionId,
             paymentLinkId: subscription.paymentLinkId
@@ -109,7 +109,7 @@ const SellerApplicationNew = () => {
             // Store subscription details in localStorage for payment success page
             localStorage.setItem('sellerSubscriptionId', subscription.subscriptionId)
             localStorage.setItem('sellerPaymentLinkId', subscription.paymentLinkId || '')
-            
+
             // Open payment in same tab for better UX
             window.location.href = subscription.shortUrl
         } else {
@@ -131,30 +131,72 @@ const SellerApplicationNew = () => {
     const submitApplication = async (data) => {
         try {
             setIsSubmitting(true)
+
+            // Prepare complete application data
             const applicationData = {
-                businessName: data.businessName || 'Test Business',
-                businessType: 'Individual/Proprietorship',
-                businessCategory: 'Electronics & Gadgets',
-                businessDescription: 'Test business description for seller application',
-                establishedYear: 2024,
-                businessEmail: data.contactPerson + '@example.com',
-                businessPhone: data.phone || '1234567890',
-                businessAddress: data.businessAddress || 'Test Address',
-                city: 'Test City',
-                state: 'Test State',
-                pincode: '123456',
-                bankAccountNumber: data.accountNumber || '123456789',
-                bankIFSC: data.ifscCode || 'TEST0123456',
-                bankName: data.bankName || 'Test Bank',
-                accountHolderName: data.contactPerson || 'Test User',
-                agreeToTerms: true
+                // Business Information
+                businessName: data.businessName,
+                businessType: data.businessType,
+                businessCategory: 'Electronics & Gadgets', // Default category
+                businessDescription: `Business application for ${data.businessName}. Contact person: ${data.contactPerson}. Phone: ${data.phone}.`,
+                establishedYear: new Date().getFullYear(),
+
+                // Contact Information
+                businessEmail: data.contactPerson ? `${data.contactPerson.toLowerCase().replace(/\s+/g, '')}@${data.businessName.toLowerCase().replace(/\s+/g, '')}.com` : 'contact@business.com',
+                businessPhone: data.phone,
+                businessAddress: data.businessAddress,
+                city: 'Mumbai', // Default city
+                state: 'Maharashtra', // Default state
+                pincode: '400001', // Default pincode
+
+                // Bank Details
+                bankAccountNumber: data.accountNumber,
+                bankIFSC: data.ifscCode,
+                bankName: data.bankName,
+                accountHolderName: data.contactPerson,
+
+                // Payment Information
+                upiId: data.upiId,
+
+                // Terms
+                agreeToTerms: data.termsAccepted || true,
+
+                // Payment Status
+                paymentCompleted: applicationData.paymentCompleted || false,
+                paymentId: applicationData.paymentId || null
             }
-            await api.post('/seller/apply', applicationData)
-            toast.success('Application submitted successfully!')
-            navigate('/user/dashboard')
+
+            const response = await api.post('/seller/apply', applicationData)
+
+            if (response.data.success) {
+                toast.success('Application submitted successfully!')
+                // Clear payment data from localStorage
+                localStorage.removeItem('sellerPaymentCompleted')
+                localStorage.removeItem('sellerPaymentId')
+                localStorage.removeItem('sellerSubscriptionId')
+                localStorage.removeItem('sellerPaymentLinkId')
+                localStorage.removeItem('registrationPaymentCompleted')
+                localStorage.removeItem('registrationPaymentId')
+
+                navigate('/user/dashboard', {
+                    state: {
+                        message: 'Your seller application has been submitted successfully! We will review it within 2-3 business days.'
+                    }
+                })
+            } else {
+                toast.error('Failed to submit application')
+            }
         } catch (error) {
             console.error('Application error:', error)
-            toast.error('Failed to submit application')
+
+            let errorMessage = 'Failed to submit application'
+            if (error.response?.data?.error?.message) {
+                errorMessage = error.response.data.error.message
+            } else if (error.response?.status === 400) {
+                errorMessage = 'Please check all required fields and try again'
+            }
+
+            toast.error(errorMessage)
         } finally {
             setIsSubmitting(false)
         }
@@ -164,36 +206,135 @@ const SellerApplicationNew = () => {
         switch (currentStep) {
             case 1:
                 return (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Business Name *
+                            </label>
+                            <input
+                                {...register('businessName', { required: 'Business name is required' })}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                placeholder="Enter your business name"
+                            />
+                            {errors.businessName && (
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessName.message}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Business Type *
+                            </label>
+                            <select
+                                {...register('businessType', { required: 'Business type is required' })}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                            >
+                                <option value="">Select business type</option>
+                                {businessTypes.map((type) => (
+                                    <option key={type.value} value={type.value}>
+                                        {type.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.businessType && (
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessType.message}</p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Contact Person *
+                                </label>
+                                <input
+                                    {...register('contactPerson', { required: 'Contact person is required' })}
+                                    type="text"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    placeholder="Full name"
+                                />
+                                {errors.contactPerson && (
+                                    <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactPerson.message}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Phone Number *
+                                </label>
+                                <input
+                                    {...register('phone', { required: 'Phone number is required' })}
+                                    type="tel"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    placeholder="10-digit phone number"
+                                />
+                                {errors.phone && (
+                                    <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.phone.message}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Business Address *
+                            </label>
+                            <textarea
+                                {...register('businessAddress', { required: 'Business address is required' })}
+                                rows={3}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500 resize-none"
+                                placeholder="Complete business address"
+                            />
+                            {errors.businessAddress && (
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessAddress.message}</p>
+                            )}
+                        </div>
+                    </div>
+                )
+
+            case 2:
+                return (
+                    <div className="space-y-4 sm:space-y-6">
                         <div className="text-center">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4">
                                 Seller Registration Fee
                             </h3>
-                            <div className="bg-saffron-50 p-6 rounded-lg border border-saffron-200 mb-6">
-                                <div className="text-4xl font-bold text-saffron-600 mb-2">₹550</div>
-                                <div className="text-sm text-gray-600">
+                            <div className="bg-saffron-50 p-4 sm:p-6 rounded-lg border border-saffron-200 mb-4 sm:mb-6">
+                                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-saffron-600 mb-2">₹550</div>
+                                <div className="text-xs sm:text-sm text-gray-600">
                                     ₹500 Platform Fee + ₹50 Affiliate Commission
                                 </div>
                             </div>
-                            
-                            <div className="bg-green-50 p-4 rounded-lg mb-6">
-                                <h4 className="font-semibold text-green-800 mb-2">Early Bird Benefits</h4>
-                                <ul className="text-sm text-green-700 space-y-1">
-                                    <li>• Lifetime ₹500/month store fee</li>
-                                    <li>• No commission on sales</li>
-                                    <li>• Second month free if profit &lt; ₹5,000</li>
-                                    <li>• Direct payments to your account</li>
+
+                            <div className="bg-green-50 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
+                                <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">Early Bird Benefits</h4>
+                                <ul className="text-xs sm:text-sm text-green-700 space-y-1">
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Lifetime ₹500/month store fee</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>No commission on sales</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Second month free if profit &lt; ₹5,000</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Direct payments to your account</span>
+                                    </li>
                                 </ul>
                             </div>
 
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <div className="mb-4 sm:mb-6">
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                                     Affiliate Code (Optional)
                                 </label>
                                 <input
                                     {...register('affiliateCode')}
                                     type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                                     placeholder="Enter affiliate code if you have one"
                                 />
                             </div>
@@ -205,9 +346,16 @@ const SellerApplicationNew = () => {
                                         handlePayment(affiliateCode);
                                     }}
                                     disabled={isSubmitting}
-                                    className="w-full bg-saffron-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-saffron-700 disabled:opacity-50"
+                                    className="w-full bg-saffron-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-semibold text-sm sm:text-base hover:bg-saffron-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {isSubmitting ? 'Processing Payment...' : 'Pay ₹550 & Continue'}
+                                    {isSubmitting ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Processing Payment...
+                                        </div>
+                                    ) : (
+                                        'Pay ₹550 & Continue'
+                                    )}
                                 </button>
                                 <p className="text-xs text-gray-500 text-center">
                                     Payment will be processed automatically
@@ -219,19 +367,19 @@ const SellerApplicationNew = () => {
 
             case 2:
                 return (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                                 Business Name *
                             </label>
                             <input
                                 {...register('businessName', { required: 'Business name is required' })}
                                 type="text"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
                                 placeholder="Enter your business name"
                             />
                             {errors.businessName && (
-                                <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessName.message}</p>
                             )}
                         </div>
 
@@ -480,22 +628,19 @@ const SellerApplicationNew = () => {
                     <div className="flex items-center justify-between">
                         {steps.map((step, index) => (
                             <div key={step.id} className="flex items-center">
-                                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                                    currentStep >= step.id
-                                        ? 'bg-saffron-600 border-saffron-600 text-white'
-                                        : 'border-gray-300 text-gray-500'
-                                }`}>
+                                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step.id
+                                    ? 'bg-saffron-600 border-saffron-600 text-white'
+                                    : 'border-gray-300 text-gray-500'
+                                    }`}>
                                     <step.icon className="w-5 h-5" />
                                 </div>
-                                <span className={`ml-2 text-sm font-medium ${
-                                    currentStep >= step.id ? 'text-saffron-600' : 'text-gray-500'
-                                }`}>
+                                <span className={`ml-2 text-sm font-medium ${currentStep >= step.id ? 'text-saffron-600' : 'text-gray-500'
+                                    }`}>
                                     {step.name}
                                 </span>
                                 {index < steps.length - 1 && (
-                                    <div className={`w-full h-0.5 mx-4 ${
-                                        currentStep > step.id ? 'bg-saffron-600' : 'bg-gray-300'
-                                    }`} />
+                                    <div className={`w-full h-0.5 mx-4 ${currentStep > step.id ? 'bg-saffron-600' : 'bg-gray-300'
+                                        }`} />
                                 )}
                             </div>
                         ))}

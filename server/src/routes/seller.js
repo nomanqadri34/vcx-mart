@@ -17,15 +17,15 @@ const validateSellerApplication = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Business name must be between 2 and 100 characters'),
   body('businessType')
-    .isIn(['Individual/Proprietorship', 'Partnership', 'Private Limited Company', 'Public Limited Company', 'LLP', 'Others'])
+    .isIn(['Individual/Proprietorship', 'Partnership', 'Private Limited Company', 'Public Limited Company', 'LLP', 'Others', 'individual', 'proprietorship', 'partnership', 'private_limited'])
     .withMessage('Invalid business type'),
   body('businessCategory')
-    .isIn(['Electronics & Gadgets', 'Fashion & Apparel', 'Home & Kitchen', 'Books & Stationery', 'Sports & Fitness', 'Beauty & Personal Care', 'Automotive', 'Others'])
+    .isIn(['Electronics & Gadgets', 'Fashion & Apparel', 'Home & Kitchen', 'Books & Stationery', 'Sports & Fitness', 'Beauty & Personal Care', 'Automotive', 'Others', 'General'])
     .withMessage('Invalid business category'),
   body('businessDescription')
     .trim()
-    .isLength({ min: 50, max: 1000 })
-    .withMessage('Business description must be between 50 and 1000 characters'),
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Business description must be between 10 and 1000 characters'),
   body('establishedYear')
     .isInt({ min: 1900, max: new Date().getFullYear() })
     .withMessage('Invalid established year'),
@@ -56,12 +56,17 @@ const validateSellerApplication = [
     .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
     .withMessage('Invalid PAN number format'),
   body('bankAccountNumber')
-    .isLength({ min: 9, max: 18 })
-    .withMessage('Invalid bank account number'),
+    .isLength({ min: 5, max: 25 })
+    .withMessage('Bank account number must be between 5 and 25 characters'),
   body('bankIFSC')
-    .optional()
-    .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/)
-    .withMessage('Invalid IFSC code'),
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value) => {
+      if (!value) return true; // Allow empty/null values
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
+        throw new Error('Invalid IFSC code format');
+      }
+      return true;
+    }),
   body('bankName')
     .trim()
     .isLength({ min: 2, max: 100 })

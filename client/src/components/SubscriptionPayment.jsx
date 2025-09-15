@@ -8,20 +8,23 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
   const [status, setStatus] = useState('pending');
 
   useEffect(() => {
-    checkSubscriptionStatus();
+    if (applicationId) {
+      checkSubscriptionStatus();
+    }
   }, [applicationId]);
 
   const checkSubscriptionStatus = async () => {
     try {
+      if (!applicationId) return;
       const response = await subscriptionAPI.getSubscriptionStatus(applicationId);
       if (response.success) {
         setSubscriptionData(response.data);
         setStatus(response.data.subscriptionStatus);
-        
+
         // Check if the subscription link looks malformed
-        if (response.data.subscriptionLink && 
-            (response.data.subscriptionLink.includes('rzp.io/l/') || 
-             response.data.subscriptionLink.includes('https://rzp.io/rzp/'))) {
+        if (response.data.subscriptionLink &&
+          (response.data.subscriptionLink.includes('rzp.io/l/') ||
+            response.data.subscriptionLink.includes('https://rzp.io/rzp/'))) {
           console.log('Detected malformed subscription link, will refresh');
           // The server should have already reset this to pending
         }
@@ -34,13 +37,15 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
   const createSubscription = async () => {
     setLoading(true);
     try {
+
+
       const response = await subscriptionAPI.createSubscription(applicationId);
-      
+
       if (response.success) {
         setSubscriptionData(response.data);
         setStatus('created');
         toast.success('Subscription created successfully!');
-        
+
         // Open payment link directly
         if (response.data.subscriptionLink) {
           window.location.href = response.data.subscriptionLink;
@@ -59,7 +64,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
   const getPlanDetails = () => {
     const currentDate = new Date();
     const launchDate = new Date('2025-10-01');
-    
+
     if (currentDate < launchDate) {
       return {
         name: 'Early Bird Monthly',
@@ -85,13 +90,12 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
         <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
           Subscription Payment
         </h3>
-        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium self-start sm:self-auto ${
-          status === 'created' ? 'bg-blue-100 text-blue-800' : 
-          status === 'active' ? 'bg-green-100 text-green-800' : 
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {status === 'created' ? 'Created' : 
-           status === 'active' ? 'Active' : 'Pending'}
+        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium self-start sm:self-auto ${status === 'created' ? 'bg-blue-100 text-blue-800' :
+          status === 'active' ? 'bg-green-100 text-green-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+          {status === 'created' ? 'Created' :
+            status === 'active' ? 'Active' : 'Pending'}
         </span>
       </div>
 
@@ -114,6 +118,13 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
 
       {status === 'pending' && (
         <div className="space-y-3 sm:space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4">
+            <h5 className="font-medium text-green-900 mb-2 text-sm sm:text-base">Final Step:</h5>
+            <p className="text-xs sm:text-sm text-green-800 mb-3">
+              After setting up your subscription, your complete application will be submitted for review.
+            </p>
+          </div>
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
             <h5 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">What's Included:</h5>
             <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
@@ -139,7 +150,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               </li>
             </ul>
           </div>
-          
+
           <button
             onClick={createSubscription}
             disabled={loading}
@@ -164,7 +175,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               Your subscription has been created. Complete the payment to activate your seller account.
             </p>
           </div>
-          
+
           <div className="space-y-2">
             <a
               href={subscriptionData.subscriptionLink}
@@ -174,7 +185,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
             >
               Complete Payment
             </a>
-            
+
             <div className="space-y-1 sm:space-y-2">
               <button
                 onClick={async () => {
@@ -191,7 +202,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               >
                 Having payment issues? Refresh subscription
               </button>
-              
+
               <button
                 onClick={async () => {
                   try {
@@ -208,7 +219,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               >
                 🧪 Test Payment Link (Debug)
               </button>
-              
+
               <button
                 onClick={async () => {
                   try {
@@ -225,7 +236,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               >
                 🔍 Show Debug Info
               </button>
-              
+
               <button
                 onClick={async () => {
                   if (confirm('This will reset ALL subscription data for your account. Continue?')) {
