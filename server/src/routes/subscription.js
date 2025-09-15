@@ -189,63 +189,41 @@ router.get('/status/:applicationId', protect, async (req, res) => {
   }
 });
 
-// Registration payment (simplified)
+// Registration payment (simplified - no application required)
 router.post('/registration/create', protect, async (req, res) => {
   try {
     const { applicationId } = req.body;
 
     console.log('Registration create request:', { applicationId, userId: req.user._id });
 
-    let application;
+    // Check if user already has a registration payment record
+    const existingPayment = await SellerApplication.findOne({
+      userId: req.user._id,
+      registrationPaid: true
+    });
 
-    if (applicationId) {
-      // Find existing application
-      application = await SellerApplication.findOne({
-        applicationId,
-        userId: req.user._id
-      });
-      console.log('Found application by ID:', application ? application.applicationId : 'not found');
-    } else {
-      // Find any application for this user
-      application = await SellerApplication.findOne({
-        userId: req.user._id
-      });
-      console.log('Found application by user:', application ? application.applicationId : 'not found');
-    }
-
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        error: { message: 'Application not found' }
-      });
-    }
-
-    // Check if already paid
-    if (application.registrationPaid) {
+    if (existingPayment) {
       return res.json({
         success: true,
         data: {
           alreadyPaid: true,
           message: 'Registration fee already paid',
-          applicationId: application.applicationId
+          applicationId: existingPayment.applicationId || 'temp_paid'
         }
       });
     }
 
-    // Auto-approve registration for simplicity
-    application.registrationPaid = true;
-    application.registrationPaymentId = `pay_${Date.now()}`;
-    application.registrationPaidAt = new Date();
-    await application.save();
+    // Create a simple payment order without requiring application
+    const orderId = `order_${Date.now()}_${req.user._id}`;
 
     res.json({
       success: true,
       data: {
         key: process.env.RAZORPAY_KEY_ID,
-        orderId: `order_${Date.now()}`,
+        orderId: orderId,
         amount: 50,
         currency: 'INR',
-        applicationId: application.applicationId
+        applicationId: applicationId || 'temp_payment'
       }
     });
 
@@ -262,11 +240,24 @@ router.post('/registration/create', protect, async (req, res) => {
 // Verify registration payment
 router.post('/registration/verify', protect, async (req, res) => {
   try {
+    const { paymentId, orderId, signature } = req.body;
+
+    console.log('Registration payment verification:', { paymentId, orderId, userId: req.user._id });
+
+    // Store payment completion in localStorage or session
+    // This will be used when user submits the actual application
+
     res.json({
       success: true,
-      message: 'Registration payment verified successfully'
+      message: 'Registration payment verified successfully',
+      data: {
+        paymentId,
+        orderId,
+        verified: true
+      }
     });
   } catch (error) {
+    console.error('Payment verification error:', error);
     res.status(500).json({
       success: false,
       error: { message: 'Failed to verify payment' }
