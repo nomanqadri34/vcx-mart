@@ -30,11 +30,11 @@ const SellerApplicationForm = () => {
     } = useForm()
 
     const steps = [
-        { id: 1, name: 'Business Info', icon: BuildingOfficeIcon },
-        { id: 2, name: 'Documents', icon: DocumentTextIcon },
-        { id: 3, name: 'Payment Details', icon: CreditCardIcon },
-        { id: 4, name: 'Registration Fee', icon: CurrencyRupeeIcon },
-        { id: 5, name: 'Monthly Subscription', icon: CheckCircleIcon }
+        { id: 1, name: 'Registration Fee', icon: CurrencyRupeeIcon },
+        { id: 2, name: 'Monthly Subscription', icon: CheckCircleIcon },
+        { id: 3, name: 'Business Info', icon: BuildingOfficeIcon },
+        { id: 4, name: 'Documents', icon: DocumentTextIcon },
+        { id: 5, name: 'Payment Details', icon: CreditCardIcon }
     ]
 
     const businessTypes = [
@@ -48,10 +48,10 @@ const SellerApplicationForm = () => {
         const updatedData = { ...applicationData, ...data }
         setApplicationData(updatedData)
 
-        if (currentStep < 3) {
+        if (currentStep < 5) {
             setCurrentStep(currentStep + 1)
-        } else if (currentStep === 3) {
-            // Submit application first, then proceed to payments
+        } else if (currentStep === 5) {
+            // Final step: Submit application to database
             submitApplication(updatedData)
         }
     }
@@ -147,17 +147,13 @@ const SellerApplicationForm = () => {
     const handleRegistrationSuccess = () => {
         setRegistrationPaid(true)
         toast.success('Registration payment completed! Now set up your monthly subscription.')
-        setCurrentStep(5)
+        setCurrentStep(2)
     }
 
     const handleSubscriptionSuccess = () => {
         setSubscriptionSetup(true)
-        toast.success('All payments completed! Your seller account is being set up.')
-        navigate('/user/dashboard', {
-            state: {
-                message: 'Congratulations! Your seller application and payments are complete. We will review your application within 2-3 business days.'
-            }
-        })
+        toast.success('Subscription setup completed! Now fill your business information.')
+        setCurrentStep(3)
     }
 
     const resetExistingApplication = async () => {
@@ -180,7 +176,42 @@ const SellerApplicationForm = () => {
             case 1:
                 return (
                     <div className="space-y-4 sm:space-y-6">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Registration Payment</h3>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-blue-800">
+                                <strong>Step 1 of 5:</strong> Pay ₹50 registration fee to start your seller journey.
+                            </p>
+                        </div>
+                        <RegistrationPayment
+                            onPaymentSuccess={handleRegistrationSuccess}
+                        />
+                    </div>
+                )
+
+            case 2:
+                return (
+                    <div className="space-y-4 sm:space-y-6">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Monthly Subscription Setup</h3>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-green-800">
+                                <strong>Step 2 of 5:</strong> Setup your ₹500/month subscription for platform access.
+                            </p>
+                        </div>
+                        <SubscriptionPayment
+                            onPaymentSuccess={handleSubscriptionSuccess}
+                        />
+                    </div>
+                )
+
+            case 3:
+                return (
+                    <div className="space-y-4 sm:space-y-6">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Business Information</h3>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-yellow-800">
+                                <strong>Step 3 of 5:</strong> Payments completed! Now fill your business information.
+                            </p>
+                        </div>
 
                         <div>
                             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
@@ -396,38 +427,136 @@ const SellerApplicationForm = () => {
             case 4:
                 return (
                     <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Registration Payment</h3>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-green-800">
-                                <strong>Step 2 of 3:</strong> Your application has been submitted. Now complete the registration payment.
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Document Information</h3>
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-purple-800">
+                                <strong>Step 4 of 5:</strong> Provide your document details for verification.
                             </p>
                         </div>
-                        <RegistrationPayment
-                            applicationId={applicationId}
-                            onPaymentSuccess={handleRegistrationSuccess}
-                        />
+
+                        <div className="bg-blue-50 p-4 rounded-md">
+                            <p className="text-sm text-blue-700">
+                                Document upload will be available after application approval. For now, please provide document details.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                PAN Number
+                            </label>
+                            <input
+                                {...register('panNumber')}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                placeholder="Enter PAN number (optional)"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                Aadhaar Number
+                            </label>
+                            <input
+                                {...register('aadhaarNumber')}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                placeholder="Enter Aadhaar number (optional)"
+                            />
+                        </div>
                     </div>
                 )
 
             case 5:
                 return (
                     <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Monthly Subscription Setup</h3>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-blue-800">
-                                <strong>Final Step:</strong> Complete your subscription setup to activate your seller account.
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Payment Details & Submit</h3>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-green-800">
+                                <strong>Final Step:</strong> Complete your payment details and submit your seller application.
                             </p>
                         </div>
-                        {isSubmitting ? (
-                            <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron-600 mx-auto mb-4"></div>
-                                <p className="text-sm text-gray-600">Submitting your application...</p>
-                            </div>
-                        ) : (
-                            <SubscriptionPayment
-                                applicationId={applicationId}
-                                onPaymentSuccess={handleSubscriptionSuccess}
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                UPI ID *
+                            </label>
+                            <input
+                                {...register('upiId', { required: 'UPI ID is required' })}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                placeholder="yourname@paytm / yourname@phonepe"
                             />
+                            {errors.upiId && (
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.upiId.message}</p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Bank Name *
+                                </label>
+                                <input
+                                    {...register('bankName', { required: 'Bank name is required' })}
+                                    type="text"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    placeholder="Enter bank name"
+                                />
+                                {errors.bankName && (
+                                    <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.bankName.message}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                    Account Number *
+                                </label>
+                                <input
+                                    {...register('accountNumber', { required: 'Account number is required' })}
+                                    type="text"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    placeholder="Bank account number"
+                                />
+                                {errors.accountNumber && (
+                                    <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.accountNumber.message}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                IFSC Code (Optional)
+                            </label>
+                            <input
+                                {...register('ifscCode', {
+                                    pattern: {
+                                        value: /^[A-Z]{4}0[A-Z0-9]{6}$/,
+                                        message: 'IFSC code must be 11 characters (e.g., SBIN0001234)'
+                                    }
+                                })}
+                                type="text"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                placeholder="SBIN0001234 (Optional)"
+                                style={{ textTransform: 'uppercase' }}
+                            />
+                            {errors.ifscCode && (
+                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.ifscCode.message}</p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-500">Format: 4 letters + 0 + 6 characters (e.g., SBIN0001234)</p>
+                        </div>
+
+                        <div className="flex items-center">
+                            <input
+                                {...register('termsAccepted', { required: 'You must accept the terms' })}
+                                type="checkbox"
+                                className="rounded border-gray-300 text-saffron-600 focus:ring-saffron-500"
+                            />
+                            <label className="ml-2 text-xs sm:text-sm text-gray-700">
+                                I agree to the Terms and Conditions and Seller Policy
+                            </label>
+                        </div>
+                        {errors.termsAccepted && (
+                            <p className="text-xs sm:text-sm text-red-600">{errors.termsAccepted.message}</p>
                         )}
                     </div>
                 )
@@ -442,7 +571,7 @@ const SellerApplicationForm = () => {
             <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
                 <div className="text-center mb-6 sm:mb-8">
                     <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Become a VCX MART Seller</h1>
-                    <p className="text-sm sm:text-base text-gray-600 mt-2">Fill application → Pay registration → Setup subscription</p>
+                    <p className="text-sm sm:text-base text-gray-600 mt-2">Pay registration → Setup subscription → Fill application</p>
 
 
                 </div>
@@ -473,7 +602,11 @@ const SellerApplicationForm = () => {
 
                 {/* Form */}
                 <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6">
-                    {currentStep <= 3 ? (
+                    {currentStep <= 2 ? (
+                        <div>
+                            {renderStepContent()}
+                        </div>
+                    ) : (
                         <form onSubmit={handleSubmit(onStepSubmit)}>
                             {renderStepContent()}
 
@@ -490,16 +623,20 @@ const SellerApplicationForm = () => {
 
                                 <button
                                     type="submit"
-                                    className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium text-white bg-saffron-600 rounded-md hover:bg-saffron-700 transition-colors"
+                                    disabled={isSubmitting}
+                                    className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium text-white bg-saffron-600 rounded-md hover:bg-saffron-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {currentStep === 3 ? 'Proceed to Payment' : 'Next'}
+                                    {isSubmitting ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            {currentStep === 5 ? 'Submitting Application...' : 'Next'}
+                                        </div>
+                                    ) : (
+                                        currentStep === 5 ? 'Submit Application' : 'Next'
+                                    )}
                                 </button>
                             </div>
                         </form>
-                    ) : (
-                        <div>
-                            {renderStepContent()}
-                        </div>
                     )}
                 </div>
             </div>
