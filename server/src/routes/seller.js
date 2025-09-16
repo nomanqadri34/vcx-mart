@@ -116,6 +116,21 @@ router.post('/apply', auth, validateSellerApplication, handleValidationErrors, a
       if (existingApplication.status === 'rejected') {
         console.log('Previous application was rejected, allowing resubmission');
         await SellerApplication.findByIdAndDelete(existingApplication._id);
+      } else if (existingApplication.status === 'pending' && existingApplication.registrationPaid) {
+        // Update existing pending application with new data
+        console.log('Updating existing pending application with form data');
+        Object.assign(existingApplication, req.body);
+        existingApplication.status = 'pending'; // Keep as pending for review
+        await existingApplication.save();
+        
+        return res.json({
+          success: true,
+          message: 'Application updated successfully',
+          data: {
+            applicationId: existingApplication.applicationId,
+            status: existingApplication.status
+          }
+        });
       } else {
         return res.status(400).json({
           success: false,
@@ -856,6 +871,50 @@ router.get('/test-auth', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: { message: 'Authentication test failed' }
+    });
+  }
+});
+
+// @route   PUT /api/v1/seller/applications/:id
+// @desc    Update seller application
+// @access  Private
+router.put('/applications/:id', auth, validateSellerApplication, handleValidationErrors, async (req, res) => {
+  try {
+    console.log('Updating seller application:', req.params.id);
+
+    // Find the application
+    const application = await SellerApplication.findOne({ 
+      applicationId: req.params.id,
+      userId: req.user._id 
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Application not found or access denied' }
+      });
+    }
+
+    // Update the application with new data
+    Object.assign(application, req.body);
+    await application.save();
+
+    console.log('Application updated successfully:', application.applicationId);
+
+    res.json({
+      success: true,
+      message: 'Application updated successfully',
+      data: {
+        applicationId: application.applicationId,
+        status: application.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Update application error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to update application' }
     });
   }
 });

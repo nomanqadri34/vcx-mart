@@ -39,10 +39,57 @@ router.post('/create', protect, async (req, res) => {
 
     console.log('Subscription create request:', { applicationId, userId: req.user._id });
 
-    const application = await SellerApplication.findOne({
-      applicationId,
+    let application;
+    
+    // First check if user already has any application
+    const existingApplication = await SellerApplication.findOne({
       userId: req.user._id
     });
+    
+    if (existingApplication) {
+      // Use existing application
+      application = existingApplication;
+      console.log('Using existing application:', application.applicationId);
+    } else if (applicationId && applicationId.startsWith('temp_')) {
+      // Create new temporary application only if none exists
+      try {
+        application = new SellerApplication({
+          applicationId,
+          userId: req.user._id,
+          businessName: 'Temporary Application',
+          businessType: 'Individual/Proprietorship',
+          businessCategory: 'Others',
+          businessDescription: 'Temporary application created for subscription setup. Will be updated with actual business details.',
+          establishedYear: new Date().getFullYear(),
+          businessEmail: req.user.email,
+          businessPhone: req.user.phone || '9876543210',
+          businessAddress: 'To be updated',
+          city: 'To be updated',
+          state: 'To be updated',
+          pincode: '400001',
+          bankAccountNumber: '000000000000',
+          bankName: 'To be updated',
+          accountHolderName: `${req.user.firstName} ${req.user.lastName}`,
+          agreeToTerms: true,
+          status: 'pending',
+          registrationPaid: true
+        });
+        await application.save();
+        console.log('Created temporary application:', applicationId);
+      } catch (saveError) {
+        console.error('Failed to create temporary application:', saveError);
+        return res.status(500).json({
+          success: false,
+          error: { message: 'Failed to create temporary application: ' + saveError.message }
+        });
+      }
+    } else {
+      // Look for specific application ID
+      application = await SellerApplication.findOne({
+        applicationId,
+        userId: req.user._id
+      });
+    }
 
     console.log('Found application for subscription:', application ? application.applicationId : 'not found');
 
@@ -73,28 +120,40 @@ router.post('/create', protect, async (req, res) => {
     console.log('Creating payment link for plan:', plan);
     console.log('User details:', { name: `${req.user.firstName} ${req.user.lastName}`, email: req.user.email });
 
-    const paymentLink = await razorpay.paymentLink.create({
-      amount: plan.amount * 100, // Convert to paise
-      currency: 'INR',
-      description: `VCX MART ${plan.name} Subscription`,
-      customer: {
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        email: req.user.email,
-        contact: req.user.phone || '9876543210'
-      },
-      notify: {
-        sms: true,
-        email: true
-      },
-      reminder_enable: true,
-      callback_url: `${process.env.CLIENT_URL}/seller/subscription-success`,
-      callback_method: 'get',
-      notes: {
-        userId: req.user._id.toString(),
-        applicationId: application.applicationId,
-        planType: planType
-      }
-    });
+    let paymentLink;
+    try {
+      paymentLink = await razorpay.paymentLink.create({
+        amount: plan.amount * 100, // Convert to paise
+        currency: 'INR',
+        description: `VCX MART ${plan.name} Subscription`,
+        customer: {
+          name: `${req.user.firstName} ${req.user.lastName}`,
+          email: req.user.email,
+          contact: req.user.phone || '9876543210'
+        },
+        notify: {
+          sms: false, // Disable SMS to avoid issues
+          email: false // Disable email to avoid issues
+        },
+        reminder_enable: false, // Disable reminders to avoid issues
+        callback_url: `${process.env.CLIENT_URL}/seller/subscription-success`,
+        callback_method: 'get',
+        notes: {
+          userId: req.user._id.toString(),
+          applicationId: application.applicationId,
+          planType: planType
+        }
+      });
+    } catch (razorpayError) {
+      console.error('Razorpay payment link creation failed:', razorpayError);
+      return res.status(500).json({
+        success: false,
+        error: { 
+          message: 'Failed to create payment link: ' + (razorpayError.error?.description || razorpayError.message),
+          details: razorpayError.error
+        }
+      });
+    }
 
     console.log('Payment link created successfully:', paymentLink.short_url);
 
@@ -149,6 +208,19 @@ router.post('/create', protect, async (req, res) => {
 router.get('/status/:applicationId', protect, async (req, res) => {
   try {
     const { applicationId } = req.params;
+
+    // Handle temp application IDs (before actual application is created)
+    if (applicationId.startsWith('temp_')) {
+      return res.json({
+        success: true,
+        data: {
+          subscriptionStatus: 'pending',
+          subscriptionLink: null,
+          amount: null,
+          plan: null
+        }
+      });
+    }
 
     const application = await SellerApplication.findOne({
       applicationId,
@@ -221,13 +293,15 @@ router.post('/registration/create', protect, async (req, res) => {
       });
     }
 
-    // Always use real Razorpay payments (removed development mock)
+    // Create Razorpay order for registration payment
+    // Receipt must be max 40 characters
+    const shortUserId = req.user._id.toString().slice(-8); // Last 8 chars of user ID
+    const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
 
-    // Create Razorpay order for registration payment (production only)
     const orderOptions = {
       amount: 5000, // ₹50 in paise
       currency: 'INR',
-      receipt: `reg_${applicationId || Date.now()}_${req.user._id}`,
+      receipt: `reg_${shortUserId}_${timestamp}`, // Max 40 chars: reg_12345678_123456
       notes: {
         applicationId: applicationId || 'temp_payment',
         userId: req.user._id.toString(),
@@ -235,41 +309,21 @@ router.post('/registration/create', protect, async (req, res) => {
       }
     };
 
-    try {
-      const order = await razorpay.orders.create(orderOptions);
-      console.log('Razorpay order created successfully:', order.id);
+    console.log('Creating Razorpay order with options:', orderOptions);
 
-      res.json({
-        success: true,
-        data: {
-          key: process.env.RAZORPAY_KEY_ID,
-          orderId: order.id,
-          amount: 50, // Amount in rupees for display
-          currency: 'INR',
-          applicationId: applicationId || 'temp_payment'
-        }
-      });
-    } catch (razorpayError) {
-      console.error('Razorpay order creation failed:', razorpayError);
+    const order = await razorpay.orders.create(orderOptions);
+    console.log('Razorpay order created successfully:', order.id);
 
-      // Fallback: return a mock order for development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Using mock order for development');
-        res.json({
-          success: true,
-          data: {
-            key: process.env.RAZORPAY_KEY_ID,
-            orderId: `order_mock_${Date.now()}`,
-            amount: 50,
-            currency: 'INR',
-            applicationId: applicationId || 'temp_payment',
-            mock: true
-          }
-        });
-      } else {
-        throw razorpayError;
+    res.json({
+      success: true,
+      data: {
+        key: process.env.RAZORPAY_KEY_ID,
+        orderId: order.id,
+        amount: 50, // Amount in rupees for display
+        currency: 'INR',
+        applicationId: applicationId || 'temp_payment'
       }
-    }
+    });
 
   } catch (error) {
     console.error('Registration error:', error);

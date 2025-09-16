@@ -142,6 +142,7 @@ router.post('/', auth, async (req, res) => {
             name,
             description,
             parent,
+            parentCategory, // Support both field names
             order,
             isFeatured,
             metaTitle,
@@ -149,6 +150,9 @@ router.post('/', auth, async (req, res) => {
             commission,
             image
         } = req.body;
+
+        // Use parent or parentCategory (support both field names from client)
+        const parentId = parent || parentCategory || null;
 
         // Check if user is admin or seller
         if (req.user.role !== 'admin' && req.user.role !== 'seller') {
@@ -160,7 +164,7 @@ router.post('/', auth, async (req, res) => {
 
         // Admin can create main categories (no parent) and subcategories
         // Sellers can only create subcategories (must have parent)
-        if (req.user.role === 'seller' && !parent) {
+        if (req.user.role === 'seller' && !parentId) {
             return res.status(403).json({
                 success: false,
                 error: { message: 'Sellers can only create subcategories. Please select a main category.' }
@@ -168,8 +172,8 @@ router.post('/', auth, async (req, res) => {
         }
 
         // If parent is provided, verify it exists and is a main category for sellers
-        if (parent) {
-            const parentCategory = await Category.findById(parent);
+        if (parentId) {
+            const parentCategory = await Category.findById(parentId);
             if (!parentCategory) {
                 return res.status(400).json({
                     success: false,
@@ -189,7 +193,7 @@ router.post('/', auth, async (req, res) => {
         const categoryData = {
             name,
             description,
-            parent: parent || null,
+            parent: parentId,
             order: order || 0,
             isFeatured: req.user.role === 'admin' ? (isFeatured || false) : false, // Only admins can set featured
             metaTitle,
@@ -255,6 +259,7 @@ router.put('/:id', auth, async (req, res) => {
             name,
             description,
             parent,
+            parentCategory, // Support both field names
             order,
             isFeatured,
             isActive,
@@ -281,10 +286,13 @@ router.put('/:id', auth, async (req, res) => {
             });
         }
 
+        // Use parent or parentCategory (support both field names from client)
+        const parentId = parent !== undefined ? parent : parentCategory;
+
         // Update fields
         if (name !== undefined) category.name = name;
         if (description !== undefined) category.description = description;
-        if (parent !== undefined) category.parent = parent || null;
+        if (parentId !== undefined) category.parent = parentId || null;
         if (order !== undefined) category.order = order;
         if (isFeatured !== undefined && req.user.role === 'admin') category.isFeatured = isFeatured;
         if (isActive !== undefined && req.user.role === 'admin') category.isActive = isActive;

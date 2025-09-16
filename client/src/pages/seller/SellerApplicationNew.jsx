@@ -78,7 +78,12 @@ const SellerApplicationNew = () => {
     const createPaymentOrder = async (affiliateCode = '') => {
         try {
             setIsSubmitting(true)
-            const response = await api.post('/payment/seller-registration', { affiliateCode })
+            // Create payment order without application ID for registration fee
+            const response = await api.post('/payment/create-registration-order', {
+                amount: 50,
+                currency: 'INR',
+                affiliateCode
+            })
             setPaymentOrder(response.data.data)
             return response.data.data
         } catch (error) {
@@ -91,29 +96,80 @@ const SellerApplicationNew = () => {
     }
 
     const handlePayment = async (affiliateCode = '') => {
-        const subscription = await createPaymentOrder(affiliateCode)
-        if (!subscription) return
+        const paymentOrder = await createPaymentOrder(affiliateCode)
+        if (!paymentOrder) return
 
-        console.log('Opening subscription payment:', subscription)
+        console.log('Opening registration payment:', paymentOrder)
 
-        // Store affiliate code and subscription details in application data
+        // Store affiliate code and payment details in application data
         setApplicationData(prev => ({
             ...prev,
             affiliateCode,
-            subscriptionId: subscription.subscriptionId,
-            paymentLinkId: subscription.paymentLinkId
+            orderId: paymentOrder.orderId,
+            paymentKey: paymentOrder.key
         }))
 
-        // Open Razorpay payment page
-        if (subscription.shortUrl) {
-            // Store subscription details in localStorage for payment success page
-            localStorage.setItem('sellerSubscriptionId', subscription.subscriptionId)
-            localStorage.setItem('sellerPaymentLinkId', subscription.paymentLinkId || '')
+        // Create Razorpay payment
+        const options = {
+            key: paymentOrder.key,
+            amount: paymentOrder.amount * 100, // Convert to paise
+            currency: paymentOrder.currency || 'INR',
+            name: 'VCX MART',
+            description: 'Seller Registration Fee - ₹50',
+            order_id: paymentOrder.orderId,
+            handler: async (response) => {
+                try {
+                    // Verify payment
+                    const verifyResponse = await api.post('/payment/verify-registration', {
+                        paymentId: response.razorpay_payment_id,
+                        orderId: response.razorpay_order_id,
+                        signature: response.razorpay_signature
+                    })
 
-            // Open payment in same tab for better UX
-            window.location.href = subscription.shortUrl
+                    if (verifyResponse.data.success) {
+                        toast.success('Registration payment completed successfully!')
+                        localStorage.setItem('registrationPaymentCompleted', 'true')
+                        localStorage.setItem('registrationPaymentId', response.razorpay_payment_id)
+
+                        // Update application data with payment info
+                        setApplicationData(prev => ({
+                            ...prev,
+                            paymentCompleted: true,
+                            paymentId: response.razorpay_payment_id
+                        }))
+
+                        // Move to next step
+                        setCurrentStep(5)
+                    } else {
+                        toast.error('Payment verification failed')
+                    }
+                } catch (error) {
+                    toast.error('Payment verification failed')
+                }
+            },
+            modal: {
+                ondismiss: () => {
+                    toast.error('Payment cancelled')
+                }
+            },
+            prefill: {
+                name: 'Seller',
+                email: 'seller@example.com'
+            },
+            theme: {
+                color: '#f59e0b'
+            }
+        }
+
+        // Open Razorpay payment
+        if (window.Razorpay) {
+            const rzp = new window.Razorpay(options)
+            rzp.on('payment.failed', (response) => {
+                toast.error('Payment failed: ' + response.error.description)
+            })
+            rzp.open()
         } else {
-            toast.error('Failed to create payment link. Please try again.')
+            toast.error('Payment gateway not loaded. Please refresh and try again.')
         }
     }
 
@@ -294,167 +350,6 @@ const SellerApplicationNew = () => {
             case 2:
                 return (
                     <div className="space-y-4 sm:space-y-6">
-                        <div className="text-center">
-                            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4">
-                                Seller Registration Fee
-                            </h3>
-                            <div className="bg-saffron-50 p-4 sm:p-6 rounded-lg border border-saffron-200 mb-4 sm:mb-6">
-                                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-saffron-600 mb-2">₹550</div>
-                                <div className="text-xs sm:text-sm text-gray-600">
-                                    ₹500 Platform Fee + ₹50 Affiliate Commission
-                                </div>
-                            </div>
-
-                            <div className="bg-green-50 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
-                                <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">Early Bird Benefits</h4>
-                                <ul className="text-xs sm:text-sm text-green-700 space-y-1">
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        <span>Lifetime ₹500/month store fee</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        <span>No commission on sales</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        <span>Second month free if profit &lt; ₹5,000</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="mr-2">•</span>
-                                        <span>Direct payments to your account</span>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div className="mb-4 sm:mb-6">
-                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                                    Affiliate Code (Optional)
-                                </label>
-                                <input
-                                    {...register('affiliateCode')}
-                                    type="text"
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                                    placeholder="Enter affiliate code if you have one"
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                <button
-                                    onClick={() => {
-                                        const affiliateCode = document.querySelector('input[name="affiliateCode"]')?.value || '';
-                                        handlePayment(affiliateCode);
-                                    }}
-                                    disabled={isSubmitting}
-                                    className="w-full bg-saffron-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-semibold text-sm sm:text-base hover:bg-saffron-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {isSubmitting ? (
-                                        <div className="flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            Processing Payment...
-                                        </div>
-                                    ) : (
-                                        'Pay ₹550 & Continue'
-                                    )}
-                                </button>
-                                <p className="text-xs text-gray-500 text-center">
-                                    Payment will be processed automatically
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )
-
-            case 2:
-                return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                                Business Name *
-                            </label>
-                            <input
-                                {...register('businessName', { required: 'Business name is required' })}
-                                type="text"
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                                placeholder="Enter your business name"
-                            />
-                            {errors.businessName && (
-                                <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.businessName.message}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Business Type *
-                            </label>
-                            <select
-                                {...register('businessType', { required: 'Business type is required' })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                            >
-                                <option value="">Select business type</option>
-                                {businessTypes.map((type) => (
-                                    <option key={type.value} value={type.value}>
-                                        {type.label}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.businessType && (
-                                <p className="mt-1 text-sm text-red-600">{errors.businessType.message}</p>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Contact Person *
-                                </label>
-                                <input
-                                    {...register('contactPerson', { required: 'Contact person is required' })}
-                                    type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                                    placeholder="Full name"
-                                />
-                                {errors.contactPerson && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.contactPerson.message}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Phone Number *
-                                </label>
-                                <input
-                                    {...register('phone', { required: 'Phone number is required' })}
-                                    type="tel"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                                    placeholder="10-digit phone number"
-                                />
-                                {errors.phone && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Business Address *
-                            </label>
-                            <textarea
-                                {...register('businessAddress', { required: 'Business address is required' })}
-                                rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
-                                placeholder="Complete business address"
-                            />
-                            {errors.businessAddress && (
-                                <p className="mt-1 text-sm text-red-600">{errors.businessAddress.message}</p>
-                            )}
-                        </div>
-                    </div>
-                )
-
-            case 3:
-                return (
-                    <div className="space-y-6">
                         <div className="bg-blue-50 p-4 rounded-md">
                             <p className="text-sm text-blue-700">
                                 Upload clear images of your documents (JPG, PNG, PDF - Max 5MB each)
@@ -508,7 +403,7 @@ const SellerApplicationNew = () => {
                     </div>
                 )
 
-            case 4:
+            case 3:
                 return (
                     <div className="space-y-6">
                         <div className="bg-green-50 p-4 rounded-md">
@@ -581,13 +476,87 @@ const SellerApplicationNew = () => {
                     </div>
                 )
 
+            case 4:
+                return (
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className="text-center">
+                            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4">
+                                Seller Registration Fee
+                            </h3>
+                            <div className="bg-saffron-50 p-4 sm:p-6 rounded-lg border border-saffron-200 mb-4 sm:mb-6">
+                                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-saffron-600 mb-2">₹50</div>
+                                <div className="text-xs sm:text-sm text-gray-600">
+                                    One-time Registration Fee
+                                </div>
+                            </div>
+
+                            <div className="bg-green-50 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
+                                <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">Early Bird Benefits</h4>
+                                <ul className="text-xs sm:text-sm text-green-700 space-y-1">
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Lifetime ₹500/month store fee</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>No commission on sales</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Second month free if profit &lt; ₹5,000</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="mr-2">•</span>
+                                        <span>Direct payments to your account</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="mb-4 sm:mb-6">
+                                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    Affiliate Code (Optional)
+                                </label>
+                                <input
+                                    {...register('affiliateCode')}
+                                    type="text"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-saffron-500 focus:border-saffron-500"
+                                    placeholder="Enter affiliate code if you have one"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => {
+                                        const affiliateCode = document.querySelector('input[name="affiliateCode"]')?.value || '';
+                                        handlePayment(affiliateCode);
+                                    }}
+                                    disabled={isSubmitting}
+                                    className="w-full bg-saffron-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-semibold text-sm sm:text-base hover:bg-saffron-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {isSubmitting ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Processing Payment...
+                                        </div>
+                                    ) : (
+                                        'Pay ₹50 & Continue'
+                                    )}
+                                </button>
+                                <p className="text-xs text-gray-500 text-center">
+                                    Payment will be processed automatically
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )
+
             case 5:
                 return (
                     <div className="space-y-6">
                         <div className="bg-saffron-50 p-6 rounded-lg">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Review Your Application</h3>
                             <div className="space-y-2 text-sm">
-                                <p><strong>Payment:</strong> ✅ Completed (₹550)</p>
+                                <p><strong>Payment:</strong> ✅ Completed (₹50)</p>
                                 <p><strong>Business:</strong> {applicationData.businessName}</p>
                                 <p><strong>Type:</strong> {applicationData.businessType}</p>
                                 <p><strong>UPI ID:</strong> {applicationData.upiId}</p>

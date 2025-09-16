@@ -154,6 +154,16 @@ const sellerApplicationSchema = new mongoose.Schema({
     trim: true,
     maxlength: 100
   },
+  upiId: {
+    type: String,
+    trim: true,
+    maxlength: 100
+  },
+  contactPerson: {
+    type: String,
+    trim: true,
+    maxlength: 100
+  },
 
   // Additional Information
   expectedMonthlyRevenue: {

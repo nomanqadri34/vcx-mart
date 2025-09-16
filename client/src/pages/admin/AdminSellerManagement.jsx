@@ -392,7 +392,7 @@ const AdminSellerManagement = () => {
           selectedApplication &&
           selectedApplication.sellerApplication && (
             <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-              <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+              <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-full sm:w-11/12 max-w-6xl shadow-lg rounded-md bg-white min-h-screen sm:min-h-0 mb-4 sm:mb-0">
                 <div className="mt-3">
                   {/* Modal Header */}
                   <div className="flex items-center justify-between mb-6">
@@ -445,7 +445,7 @@ const AdminSellerManagement = () => {
                   </div>
 
                   {/* Application Details */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     {/* Personal Information */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                       <div className="flex items-center mb-4">
@@ -459,10 +459,10 @@ const AdminSellerManagement = () => {
                         </h4>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
                           <span className="text-gray-600">Name:</span>
-                          <span className="font-medium text-gray-900">
-                            {selectedApplication.firstName} {selectedApplication.lastName}
+                          <span className="font-medium text-gray-900 text-right">
+                            {selectedApplication.firstName || ''} {selectedApplication.lastName || ''}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -515,10 +515,11 @@ const AdminSellerManagement = () => {
                             {selectedApplication.sellerApplication?.businessCategory || 'N/A'}
                           </span>
                         </div>
+
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Business Email:</span>
-                          <span className="font-medium text-blue-600 text-sm">
-                            {selectedApplication.sellerApplication?.businessEmail || 'N/A'}
+                          <span className="text-gray-600">Contact Person:</span>
+                          <span className="font-medium text-saffron-600">
+                            {selectedApplication.sellerApplication?.contactPerson || selectedApplication.sellerApplication?.accountHolderName || 'N/A'}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -546,39 +547,17 @@ const AdminSellerManagement = () => {
                           Business Address
                         </h4>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-gray-600 text-sm">Full Address:</span>
-                          <p className="font-medium text-gray-900 mt-1">
-                            {selectedApplication.sellerApplication?.businessAddress || 'N/A'}
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-gray-600 text-sm">City:</span>
-                            <p className="font-medium text-gray-900">
-                              {selectedApplication.sellerApplication?.city || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="text-gray-600 text-sm">State:</span>
-                            <p className="font-medium text-gray-900">
-                              {selectedApplication.sellerApplication?.state || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 text-sm">Pincode:</span>
-                          <p className="font-medium text-gray-900">
-                            {selectedApplication.sellerApplication?.pincode || 'N/A'}
-                          </p>
-                        </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <span className="text-gray-600 text-sm">Address:</span>
+                        <p className="font-medium text-gray-900 mt-1 leading-relaxed">
+                          {selectedApplication.sellerApplication?.businessAddress || 'No address provided'}
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Second Row */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
 
                     {/* Legal Information */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
@@ -594,13 +573,7 @@ const AdminSellerManagement = () => {
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <span className="text-gray-600 text-sm">PAN Number:</span>
                           <p className="font-mono font-medium text-gray-900 text-lg">
-                            {selectedApplication.sellerApplication?.panNumber || 'N/A'}
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="text-gray-600 text-sm">GST Number:</span>
-                          <p className="font-mono font-medium text-gray-900">
-                            {selectedApplication.sellerApplication?.gstNumber || 'Not Provided'}
+                            {selectedApplication.sellerApplication?.panNumber || 'Not provided'}
                           </p>
                         </div>
                         <div className="bg-saffron-50 p-3 rounded-lg border border-saffron-200">
@@ -612,17 +585,26 @@ const AdminSellerManagement = () => {
                       </div>
                     </div>
 
-                    {/* Bank Details */}
+                    {/* Payment & Bank Details */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                       <div className="flex items-center mb-4">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                           <CreditCardIcon className="h-5 w-5 text-blue-600" />
                         </div>
                         <h4 className="font-semibold text-gray-900 text-lg">
-                          Bank Details
+                          Payment & Bank Details
                         </h4>
                       </div>
                       <div className="space-y-4">
+                        {/* UPI Details */}
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+                          <span className="text-purple-700 text-sm font-medium">UPI ID:</span>
+                          <p className="font-mono font-bold text-purple-900 text-lg">
+                            {selectedApplication.sellerApplication?.upiId || 'Not provided'}
+                          </p>
+                        </div>
+                        
+                        {/* Bank Details Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <span className="text-gray-600 text-sm">Bank Name:</span>
@@ -641,9 +623,7 @@ const AdminSellerManagement = () => {
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <span className="text-gray-600 text-sm">Account Number:</span>
                             <p className="font-mono font-medium text-gray-900">
-                              {selectedApplication.sellerApplication?.bankAccountNumber ? 
-                                `****${selectedApplication.sellerApplication.bankAccountNumber.slice(-4)}` : 'N/A'
-                              }
+                              {selectedApplication.sellerApplication?.bankAccountNumber || 'N/A'}
                             </p>
                           </div>
                           <div className="bg-gray-50 p-3 rounded-lg">
@@ -653,68 +633,83 @@ const AdminSellerManagement = () => {
                             </p>
                           </div>
                         </div>
+                        
+                        {/* Payment Status */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <span className="text-green-700 text-sm font-medium">Registration Fee:</span>
+                            <p className="text-green-900 font-semibold">
+                              {selectedApplication.sellerApplication?.registrationPaid ? '✓ Paid (₹50)' : '✗ Pending'}
+                            </p>
+                          </div>
+                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <span className="text-blue-700 text-sm font-medium">Subscription:</span>
+                            <p className="text-blue-900 font-semibold">
+                              {selectedApplication.sellerApplication?.subscriptionStatus === 'active' ? 
+                                `✓ Active (₹${selectedApplication.sellerApplication?.monthlyAmount || 500}/month)` : 
+                                selectedApplication.sellerApplication?.subscriptionStatus || 'Pending'
+                              }
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Third Row */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    {/* Product Categories */}
+                  {/* Documents Information */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    {/* Document Details */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                       <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-saffron-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-saffron-600 font-bold text-lg">📦</span>
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <DocumentTextIcon className="h-5 w-5 text-purple-600" />
                         </div>
                         <h4 className="font-semibold text-gray-900 text-lg">
-                          Product Categories
+                          Document Details
                         </h4>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedApplication.sellerApplication?.productCategories?.length > 0 ? (
-                          selectedApplication.sellerApplication.productCategories.map(
-                            (category, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-2 bg-gradient-to-r from-saffron-100 to-green-100 text-saffron-800 text-sm rounded-full border border-saffron-200 font-medium"
-                              >
-                                {category}
-                              </span>
-                            )
-                          )
-                        ) : (
-                          <span className="text-gray-500 text-sm italic">No categories specified</span>
-                        )}
+                      <div className="space-y-3">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="text-gray-600 text-sm">PAN Number:</span>
+                          <p className="font-mono font-medium text-gray-900">
+                            {selectedApplication.sellerApplication?.panNumber || 'Not provided'}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="text-gray-600 text-sm">Aadhaar Number:</span>
+                          <p className="font-mono font-medium text-gray-900">
+                            {selectedApplication.sellerApplication?.aadhaarNumber || 'Not provided'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Business Description */}
+                    {/* Terms & Agreement */}
                     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                       <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                          <DocumentTextIcon className="h-5 w-5 text-gray-600" />
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                          <CheckCircleIcon className="h-5 w-5 text-green-600" />
                         </div>
                         <h4 className="font-semibold text-gray-900 text-lg">
-                          Business Description
+                          Agreement Status
                         </h4>
                       </div>
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <p className="text-gray-700 leading-relaxed">
-                          {selectedApplication.sellerApplication?.businessDescription || 'No description provided'}
-                        </p>
-                      </div>
-                      
-                      {/* Additional Information */}
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <span className="text-blue-700 text-sm font-medium">Expected Monthly Revenue:</span>
-                          <p className="text-blue-900 font-semibold">
-                            {selectedApplication.sellerApplication?.expectedRevenue || 'Not specified'}
+                      <div className="space-y-3">
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                          <div className="flex items-center">
+                            <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
+                            <span className="text-green-800 font-medium">
+                              Terms & Conditions Accepted
+                            </span>
+                          </div>
+                          <p className="text-green-700 text-sm mt-1">
+                            User has agreed to all terms and seller policies
                           </p>
                         </div>
-                        <div className="bg-green-50 p-3 rounded-lg">
-                          <span className="text-green-700 text-sm font-medium">Has Physical Store:</span>
-                          <p className="text-green-900 font-semibold">
-                            {selectedApplication.sellerApplication?.hasPhysicalStore ? 'Yes' : 'No'}
+                        <div className="bg-saffron-50 p-3 rounded-lg border border-saffron-200">
+                          <span className="text-saffron-700 text-sm font-medium">Application ID:</span>
+                          <p className="font-mono font-bold text-saffron-900">
+                            {selectedApplication.sellerApplication?.applicationId || 'N/A'}
                           </p>
                         </div>
                       </div>

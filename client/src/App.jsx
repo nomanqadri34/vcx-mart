@@ -99,6 +99,7 @@ import SellerApplicationNew from "./pages/seller/SellerApplicationNew";
 import SellerApplicationForm from "./pages/seller/SellerApplicationForm";
 import PaymentSuccess from "./pages/seller/PaymentSuccess";
 import SubscriptionSuccess from "./pages/seller/SubscriptionSuccess";
+import ApplicationSubmitted from "./pages/seller/ApplicationSubmitted";
 import SellerPaymentFlow from "./pages/seller/SellerPaymentFlow";
 import SellerDashboardReal from "./pages/seller/SellerDashboard";
 import ProductManagement from "./pages/seller/ProductManagement";
@@ -206,6 +207,7 @@ function App() {
                         />
 
                         <Route path="/become-seller" element={<BecomeSeller />} />
+                        <Route path="/seller/application-submitted" element={<ApplicationSubmitted />} />
                         <Route path="/debug-user" element={<DebugUser />} />
                         {/* Auth Routes */}
                         <Route path="/login" element={<LoginPage />} />

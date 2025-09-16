@@ -36,16 +36,21 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
 
 
 
-      // Create registration payment order
-      const orderResponse = await subscriptionAPI.createRegistrationOrder(applicationId || 'temp_payment');
+      // Create registration payment order without applicationId
+      const orderResponse = await api.post('/payment/create-registration-order', {
+        amount: 50,
+        currency: 'INR'
+      });
 
-      if (!orderResponse.success) {
-        toast.error(orderResponse.error || 'Failed to create payment order');
+      if (!orderResponse.data?.success) {
+        toast.error('Failed to create payment order');
         return;
       }
 
+      const orderData = orderResponse.data.data;
+
       // Check if registration fee already paid
-      if (orderResponse.data?.alreadyPaid) {
+      if (orderData?.alreadyPaid) {
         toast.success('Registration fee already paid! You can now proceed to subscription setup.');
         // Store payment completion
         localStorage.setItem('registrationPaymentCompleted', 'true');
@@ -56,22 +61,21 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
 
       // Create Razorpay payment
       const options = {
-        key: orderResponse.data.key || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: orderResponse.data.amount * 100, // Convert to paise
-        currency: orderResponse.data.currency || 'INR',
+        key: orderData.key || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount * 100, // Convert to paise
+        currency: orderData.currency || 'INR',
         name: 'VCX MART',
         description: 'Seller Registration Fee - ₹50',
-        order_id: orderResponse.data.orderId,
+        order_id: orderData.orderId,
         handler: async (response) => {
           try {
-            const verifyResponse = await subscriptionAPI.verifyRegistrationPayment({
-              applicationId: applicationId,
+            const verifyResponse = await api.post('/payment/verify-registration', {
               paymentId: response.razorpay_payment_id,
               orderId: response.razorpay_order_id,
               signature: response.razorpay_signature
             });
 
-            if (verifyResponse.success) {
+            if (verifyResponse.data.success) {
               toast.success('Registration payment completed successfully!');
               localStorage.setItem('registrationPaymentCompleted', 'true');
               localStorage.setItem('registrationPaymentId', response.razorpay_payment_id);
@@ -180,15 +184,15 @@ const RegistrationPayment = ({ applicationId, onPaymentSuccess, showApplicationF
         <button
           onClick={handleRegistrationPayment}
           disabled={loading}
-          className="w-full bg-orange-600 text-white py-4 px-6 rounded-lg font-semibold text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+          className="w-full bg-orange-600 text-white py-2 sm:py-3 lg:py-4 px-3 sm:px-4 lg:px-6 rounded-lg font-semibold text-xs sm:text-sm lg:text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           {loading ? (
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Processing...
+              <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+              <span className="text-xs sm:text-sm lg:text-base">Processing...</span>
             </div>
           ) : (
-            'Pay Registration Fee ₹50'
+            <span className="text-xs sm:text-sm lg:text-base">Pay Registration Fee ₹50</span>
           )}
         </button>
       </div>

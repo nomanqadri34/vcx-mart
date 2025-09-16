@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../../services/api'
 import RegistrationPayment from '../../components/RegistrationPayment'
 import SubscriptionPayment from '../../components/SubscriptionPayment'
@@ -20,7 +20,53 @@ const SellerApplicationForm = () => {
     const [registrationPaid, setRegistrationPaid] = useState(false)
     const [subscriptionSetup, setSubscriptionSetup] = useState(false)
     const [applicationId, setApplicationId] = useState(null)
+    const [planType, setPlanType] = useState('early-bird')
+    const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false)
     const navigate = useNavigate()
+    const location = useLocation()
+
+    // Get plan type from navigation state and handle subscription completion
+    useEffect(() => {
+        if (location.state?.planType) {
+            setPlanType(location.state.planType)
+        }
+        
+        // Handle return from subscription success
+        if (location.state?.subscriptionCompleted && !hasShownWelcomeToast) {
+            setSubscriptionSetup(true)
+            setRegistrationPaid(true)
+            setApplicationId('temp_' + Date.now())
+            
+            if (location.state?.step) {
+                setCurrentStep(location.state.step)
+            } else {
+                setCurrentStep(3) // Default to business info step
+            }
+            
+            toast.success('Welcome back! Continue filling your application.')
+            setHasShownWelcomeToast(true)
+        }
+        
+        // Check localStorage for completed payments
+        const regPaid = localStorage.getItem('registrationPaymentCompleted')
+        const subCompleted = localStorage.getItem('subscriptionCompleted')
+        
+        if (regPaid === 'true') {
+            setRegistrationPaid(true)
+        }
+        
+        if (subCompleted === 'true') {
+            setSubscriptionSetup(true)
+            if (!applicationId) {
+                setApplicationId('temp_' + Date.now())
+            }
+        }
+    }, [location.state, applicationId])
+
+    // Get subscription amount based on plan type
+    const getSubscriptionAmount = () => {
+        return planType === 'early-bird' ? 500 : 800
+    }
 
     const {
         register,
@@ -89,6 +135,8 @@ const SellerApplicationForm = () => {
                 bankIFSC: data.ifscCode?.toUpperCase() || '', // Make IFSC uppercase and optional
                 bankName: data.bankName,
                 accountHolderName: data.contactPerson,
+                upiId: data.upiId,
+                contactPerson: data.contactPerson,
 
                 // Document Information (optional fields)
                 panNumber: data.panNumber || undefined,
@@ -97,13 +145,12 @@ const SellerApplicationForm = () => {
                 agreeToTerms: Boolean(data.termsAccepted)
             }
 
+            // Always try to create/update application - server will handle existing applications
             const response = await api.post('/seller/apply', applicationPayload)
 
             if (response.data.success) {
-                const appId = response.data.data.applicationId
-                setApplicationId(appId)
-                toast.success('Application submitted successfully! Now proceed with registration payment.')
-                setCurrentStep(4)
+                toast.success('Application submitted successfully!')
+                handleFinalSuccess(response.data.data?.applicationId)
             } else {
                 toast.error('Failed to submit application')
             }
@@ -144,8 +191,12 @@ const SellerApplicationForm = () => {
         }
     }
 
-    const handleRegistrationSuccess = () => {
+    const handleRegistrationSuccess = async () => {
         setRegistrationPaid(true)
+        toast.success('Registration payment completed! Now creating your application...')
+        
+        // Skip application creation, just proceed to subscription
+        setApplicationId('temp_' + Date.now())
         toast.success('Registration payment completed! Now set up your monthly subscription.')
         setCurrentStep(2)
     }
@@ -153,7 +204,30 @@ const SellerApplicationForm = () => {
     const handleSubscriptionSuccess = () => {
         setSubscriptionSetup(true)
         toast.success('Subscription setup completed! Now fill your business information.')
+        
+        // Ensure user is still authenticated after payment redirect
+        const token = localStorage.getItem('accessToken')
+        if (!token) {
+            toast.error('Session expired. Please login again.')
+            navigate('/login')
+            return
+        }
+        
         setCurrentStep(3)
+    }
+
+    const handleFinalSuccess = (applicationId) => {
+        toast.success('Seller application completed successfully!')
+        // Clear subscription completion flags
+        localStorage.removeItem('subscriptionCompleted')
+        localStorage.removeItem('registrationPaymentCompleted')
+        
+        navigate('/seller/application-submitted', {
+            state: {
+                applicationId: applicationId || 'N/A',
+                planType
+            }
+        })
     }
 
     const resetExistingApplication = async () => {
@@ -175,10 +249,10 @@ const SellerApplicationForm = () => {
         switch (currentStep) {
             case 1:
                 return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Registration Payment</h3>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-blue-800">
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Registration Payment</h3>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                            <p className="text-xs sm:text-sm text-blue-800">
                                 <strong>Step 1 of 5:</strong> Pay ₹50 registration fee to start your seller journey.
                             </p>
                         </div>
@@ -190,25 +264,31 @@ const SellerApplicationForm = () => {
 
             case 2:
                 return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Monthly Subscription Setup</h3>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-green-800">
-                                <strong>Step 2 of 5:</strong> Setup your ₹500/month subscription for platform access.
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Monthly Subscription Setup</h3>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                            <p className="text-xs sm:text-sm text-green-800">
+                                <strong>Step 2 of 5:</strong> Setup your ₹{getSubscriptionAmount()}/month subscription for platform access.
+                            </p>
+                            <p className="text-xs text-green-700 mt-1">
+                                Plan: {planType === 'early-bird' ? 'Early Bird (₹500/month)' : 'Regular (₹800/month)'}
                             </p>
                         </div>
                         <SubscriptionPayment
+                            applicationId={applicationId}
                             onPaymentSuccess={handleSubscriptionSuccess}
+                            planType={planType}
+                            amount={getSubscriptionAmount()}
                         />
                     </div>
                 )
 
             case 3:
                 return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Business Information</h3>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-yellow-800">
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Business Information</h3>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                            <p className="text-xs sm:text-sm text-yellow-800">
                                 <strong>Step 3 of 5:</strong> Payments completed! Now fill your business information.
                             </p>
                         </div>
@@ -301,16 +381,16 @@ const SellerApplicationForm = () => {
 
             case 4:
                 return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Document Information</h3>
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-purple-800">
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Document Information</h3>
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                            <p className="text-xs sm:text-sm text-purple-800">
                                 <strong>Step 4 of 5:</strong> Provide your document details for verification.
                             </p>
                         </div>
 
-                        <div className="bg-blue-50 p-4 rounded-md">
-                            <p className="text-sm text-blue-700">
+                        <div className="bg-blue-50 p-3 sm:p-4 rounded-md">
+                            <p className="text-xs sm:text-sm text-blue-700">
                                 Document upload will be available after application approval. For now, please provide document details.
                             </p>
                         </div>
@@ -343,10 +423,10 @@ const SellerApplicationForm = () => {
 
             case 5:
                 return (
-                    <div className="space-y-4 sm:space-y-6">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Payment Details & Submit</h3>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-green-800">
+                    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Payment Details & Submit</h3>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                            <p className="text-xs sm:text-sm text-green-800">
                                 <strong>Final Step:</strong> Complete your payment details and submit your seller application.
                             </p>
                         </div>
@@ -444,39 +524,43 @@ const SellerApplicationForm = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 py-4 sm:py-8">
             <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
-                <div className="text-center mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Become a VCX MART Seller</h1>
-                    <p className="text-sm sm:text-base text-gray-600 mt-2">Pay registration → Setup subscription → Fill application</p>
-
-
+                <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+                    <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">Become a VCX MART Seller</h1>
+                    <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1 sm:mt-2">Pay registration → Setup subscription → Fill application</p>
                 </div>
 
                 {/* Progress Steps */}
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex items-center justify-between overflow-x-auto">
+                <div className="mb-4 sm:mb-6 lg:mb-8">
+                    <div className="flex items-center justify-between overflow-x-auto pb-2">
                         {steps.map((step, index) => (
-                            <div key={step.id} className="flex items-center min-w-0">
-                                <div className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 ${currentStep >= step.id
+                            <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
+                                <div className={`flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full border-2 ${currentStep >= step.id
                                     ? 'bg-saffron-600 border-saffron-600 text-white'
                                     : 'border-gray-300 text-gray-500'
                                     }`}>
-                                    <step.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <step.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                                 </div>
-                                <span className={`ml-2 text-xs sm:text-sm font-medium ${currentStep >= step.id ? 'text-saffron-600' : 'text-gray-500'
-                                    }`}>
+                                <span className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${currentStep >= step.id ? 'text-saffron-600' : 'text-gray-500'
+                                    } hidden sm:block`}>
                                     {step.name}
                                 </span>
                                 {index < steps.length - 1 && (
-                                    <div className={`w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 ${currentStep > step.id ? 'bg-saffron-600' : 'bg-gray-300'
+                                    <div className={`w-4 sm:w-8 lg:w-16 h-0.5 mx-1 sm:mx-2 lg:mx-4 ${currentStep > step.id ? 'bg-saffron-600' : 'bg-gray-300'
                                         }`} />
                                 )}
                             </div>
                         ))}
                     </div>
+                    {/* Mobile step name */}
+                    <div className="text-center mt-2 sm:hidden">
+                        <span className="text-xs font-medium text-saffron-600">
+                            Step {currentStep}: {steps.find(s => s.id === currentStep)?.name}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Form */}
-                <div className="bg-white shadow-lg rounded-lg p-4 sm:p-6">
+                <div className="bg-white shadow-lg rounded-lg p-3 sm:p-4 lg:p-6">
                     {currentStep <= 2 ? (
                         <div>
                             {renderStepContent()}
@@ -486,12 +570,12 @@ const SellerApplicationForm = () => {
                             {renderStepContent()}
 
                             {/* Navigation Buttons */}
-                            <div className="flex flex-col sm:flex-row justify-between mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 gap-3 sm:gap-0">
+                            <div className="flex flex-col sm:flex-row justify-between mt-4 sm:mt-6 lg:mt-8 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-200 gap-2 sm:gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                                     disabled={currentStep === 1}
-                                    className="px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition-colors"
                                 >
                                     Previous
                                 </button>
@@ -499,15 +583,15 @@ const SellerApplicationForm = () => {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium text-white bg-saffron-600 rounded-md hover:bg-saffron-700 disabled:opacity-50 transition-colors"
+                                    className="px-3 sm:px-4 lg:px-6 py-2 text-xs sm:text-sm font-medium text-white bg-saffron-600 rounded-md hover:bg-saffron-700 disabled:opacity-50 transition-colors"
                                 >
                                     {isSubmitting ? (
                                         <div className="flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            {currentStep === 5 ? 'Submitting Application...' : 'Next'}
+                                            <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+                                            <span className="text-xs sm:text-sm">{currentStep === 5 ? 'Submitting...' : 'Next'}</span>
                                         </div>
                                     ) : (
-                                        currentStep === 5 ? 'Submit Application' : 'Next'
+                                        <span className="text-xs sm:text-sm">{currentStep === 5 ? 'Submit Application' : 'Next'}</span>
                                     )}
                                 </button>
                             </div>

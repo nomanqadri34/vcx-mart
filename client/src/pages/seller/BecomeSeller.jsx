@@ -117,13 +117,13 @@ const BecomeSeller = () => {
     },
   ];
 
-  const handleStartSelling = () => {
+  const handleStartSelling = (planType = 'early-bird') => {
     if (!user) {
       navigate("/login", { state: { from: "/seller/apply" } });
       return;
     }
-    // Redirect to new application flow: Application → Registration → Subscription
-    navigate("/seller/apply");
+    // Both plans go to form first, then registration, then subscription
+    navigate("/seller/apply", { state: { planType } });
   };
 
   const handleAffiliateApply = () => {
@@ -208,12 +208,12 @@ const BecomeSeller = () => {
             <div className="relative bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-8">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                  {new Date() <= new Date('2025-10-01') ? 'Limited Time' : 'Expired'}
+                  {new Date() <= new Date('2025-10-01T18:00:00') ? 'Limited Time' : 'Expired'}
                 </span>
               </div>
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Early Bird Plan</h3>
-                <p className="text-gray-600 mb-6">Available until October 1st</p>
+                <p className="text-gray-600 mb-6">Available until October 1st, 2025 6:00 PM</p>
                 <div className="mb-4">
                   <div className="text-5xl font-bold text-green-600 mb-2">₹550</div>
                   <div className="text-sm text-gray-600">
@@ -240,25 +240,25 @@ const BecomeSeller = () => {
                   </li>
                 </ul>
                 <button
-                  onClick={handleStartSelling}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() <= new Date('2025-10-01')
+                  onClick={() => handleStartSelling('early-bird')}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() <= new Date('2025-10-01T18:00:00')
                       ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     }`}
-                  disabled={new Date() > new Date('2025-10-01')}
+                  disabled={new Date() > new Date('2025-10-01T18:00:00')}
                 >
-                  {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Offer Expired'}
+                  {new Date() <= new Date('2025-10-01T18:00:00') ? 'Choose Early Bird Plan' : 'Offer Expired'}
                 </button>
                 <p className="text-sm text-gray-500 mt-3">
-                  {new Date() <= new Date('2025-10-01') ? 'Save ₹300/month forever!' : 'This offer has expired'}
+                  {new Date() <= new Date('2025-10-01T18:00:00') ? 'Save ₹300/month forever!' : 'This offer has expired'}
                 </p>
               </div>
             </div>
 
             {/* Regular Plan */}
-            <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-8 ${new Date() >= new Date('2024-10-01') ? 'relative' : ''
+            <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-8 ${new Date() >= new Date('2025-10-01T18:00:00') ? 'relative' : ''
               }`}>
-              {new Date() > new Date('2025-10-01') && (
+              {new Date() > new Date('2025-10-01T18:00:00') && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <span className="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
                     Current Plan
@@ -268,7 +268,7 @@ const BecomeSeller = () => {
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Regular Plan</h3>
                 <p className="text-gray-600 mb-6">
-                  {new Date() <= new Date('2025-10-01') ? 'Starting October 2025' : 'Standard pricing'}
+                  {new Date() <= new Date('2025-10-01T18:00:00') ? 'Available after October 1st, 2025 6:00 PM' : 'Standard pricing'}
                 </p>
                 <div className="mb-4">
                   <div className="text-5xl font-bold text-orange-600 mb-2">₹850</div>
@@ -296,16 +296,16 @@ const BecomeSeller = () => {
                   </li>
                 </ul>
                 <button
-                  onClick={handleStartSelling}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() <= new Date('2025-10-01')
-                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      : 'bg-orange-600 text-white hover:bg-orange-700'
+                  onClick={() => handleStartSelling('regular')}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${new Date() > new Date('2025-10-01T18:00:00')
+                      ? 'bg-orange-600 text-white hover:bg-orange-700'
+                      : 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     }`}
-                  disabled={new Date() <= new Date('2025-10-01')}
+                  disabled={new Date() <= new Date('2025-10-01T18:00:00')}
                 >
-                  {new Date() <= new Date('2025-10-01') ? 'Available Oct 2025' : 'Pay ₹850 & Start Selling'}
+                  {new Date() > new Date('2025-10-01T18:00:00') ? 'Choose Regular Plan' : 'Available After Oct 1, 2025'}
                 </button>
-                {new Date() <= new Date('2025-10-01') && (
+                {new Date() <= new Date('2025-10-01T18:00:00') && (
                   <p className="text-sm text-gray-500 mt-3">
                     ₹300 more than Early Bird
                   </p>
@@ -441,14 +441,14 @@ const BecomeSeller = () => {
             Register now for lifetime ₹500/month pricing + ₹50 registration
           </p>
           <p className="text-lg text-white/80 mb-8">
-            Price increases to ₹800/month + ₹50 registration after October 1st
+            Price increases to ₹800/month + ₹50 registration after October 1st, 2025 6:00 PM
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={handleStartSelling}
+              onClick={() => handleStartSelling('early-bird')}
               className="inline-flex items-center px-8 py-4 bg-white text-saffron-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-lg"
             >
-              {new Date() <= new Date('2025-10-01') ? 'Pay ₹550 & Start Selling' : 'Pay ₹850 & Start Selling'}
+              {new Date() <= new Date('2025-10-01T18:00:00') ? 'Choose Early Bird Plan' : 'Choose Regular Plan'}
               <ArrowRightIcon className="ml-2 h-5 w-5" />
             </button>
             <button

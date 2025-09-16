@@ -141,11 +141,11 @@ const ProductsPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl font-bold text-gray-900">
-                    ₹{(product.price || product.basePrice).toLocaleString()}
+                    ₹{(product.discountedPrice && product.discountedPrice < (product.price || product.basePrice) ? product.discountedPrice : (product.price || product.basePrice)).toLocaleString()}
                   </span>
-                  {product.discountedPrice && (
+                  {product.discountedPrice && product.discountedPrice < (product.price || product.basePrice) && (
                     <span className="text-sm text-gray-500 line-through">
-                      ₹{product.discountedPrice.toLocaleString()}
+                      ₹{(product.price || product.basePrice).toLocaleString()}
                     </span>
                   )}
                 </div>

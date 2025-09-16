@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { subscriptionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
-const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
+const SubscriptionPayment = ({ applicationId, onPaymentSuccess, planType = 'early-bird', amount = 500 }) => {
   const [loading, setLoading] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [status, setStatus] = useState('pending');
@@ -107,21 +107,18 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
   };
 
   const getPlanDetails = () => {
-    const currentDate = new Date();
-    const launchDate = new Date('2025-10-01');
-
-    if (currentDate < launchDate) {
+    if (planType === 'early-bird') {
       return {
         name: 'Early Bird Monthly',
-        amount: 500,
-        description: 'Monthly platform fee before October 1st, 2025',
+        amount: amount,
+        description: 'Monthly platform fee - Early Bird pricing',
         color: 'text-green-600'
       };
     } else {
       return {
         name: 'Regular Monthly',
-        amount: 800,
-        description: 'Monthly platform fee from October 1st, 2025',
+        amount: amount,
+        description: 'Monthly platform fee - Regular pricing',
         color: 'text-orange-600'
       };
     }
@@ -153,7 +150,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
           <span className="text-xl sm:text-2xl font-bold text-gray-900">
             ₹{planDetails.amount}/month
           </span>
-          {planDetails.name === 'Early Bird Monthly' && (
+          {planType === 'early-bird' && (
             <span className="text-xs sm:text-sm text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full self-start sm:self-auto">
               Save ₹300/month
             </span>
@@ -199,15 +196,15 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
           <button
             onClick={createSubscription}
             disabled={loading}
-            className="w-full bg-orange-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-medium text-sm sm:text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            className="w-full bg-orange-600 text-white py-2 sm:py-3 lg:py-4 px-3 sm:px-4 lg:px-6 rounded-lg font-medium text-xs sm:text-sm lg:text-base hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
           >
             {loading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Creating Subscription...
+                <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+                <span className="text-xs sm:text-sm lg:text-base">Creating...</span>
               </div>
             ) : (
-              `Subscribe for ₹${planDetails.amount}/month`
+              <span className="text-xs sm:text-sm lg:text-base">{`Subscribe for ₹${planDetails.amount}/month`}</span>
             )}
           </button>
         </div>
@@ -226,7 +223,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
               href={subscriptionData.subscriptionLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full bg-green-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg font-medium text-sm sm:text-base text-center hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              className="block w-full bg-green-600 text-white py-2 sm:py-3 lg:py-4 px-3 sm:px-4 lg:px-6 rounded-lg font-medium text-xs sm:text-sm lg:text-base text-center hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               Complete Payment
             </a>
@@ -248,39 +245,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
                 Having payment issues? Refresh subscription
               </button>
 
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await subscriptionAPI.testPaymentLink();
-                    if (response.success) {
-                      toast.success('Test payment link created!');
-                      window.open(response.data.paymentLink, '_blank');
-                    }
-                  } catch (error) {
-                    toast.error('Failed to create test payment link');
-                  }
-                }}
-                className="w-full text-blue-600 py-2 px-4 text-xs sm:text-sm hover:text-blue-800 transition-colors"
-              >
-                🧪 Test Payment Link (Debug)
-              </button>
 
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await subscriptionAPI.getDebugInfo(applicationId);
-                    if (response.success) {
-                      console.log('Debug info:', response.data);
-                      toast.success('Debug info logged to console');
-                    }
-                  } catch (error) {
-                    toast.error('Failed to get debug info');
-                  }
-                }}
-                className="w-full text-purple-600 py-2 px-4 text-xs sm:text-sm hover:text-purple-800 transition-colors"
-              >
-                🔍 Show Debug Info
-              </button>
 
               <button
                 onClick={async () => {
@@ -308,7 +273,7 @@ const SubscriptionPayment = ({ applicationId, onPaymentSuccess }) => {
       {status === 'active' && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-start sm:items-center">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 mt-0.5 sm:mt-0 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" width="20" height="20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <span className="text-green-800 font-medium text-xs sm:text-sm">

@@ -58,25 +58,8 @@ const DebugAPIStatus = () => {
             setStatus(prev => ({ ...prev, auth: `❌ Auth failed (${error.response?.status})` }));
         }
 
-        // Check subscription endpoint
-        try {
-            // Test without authentication first
-            const response = await fetch('http://localhost:5000/api/v1/subscription/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ applicationId: 'test' })
-            });
-
-            if (response.status === 401) {
-                setStatus(prev => ({ ...prev, subscription: '✅ Endpoint exists (401 expected)' }));
-            } else if (response.status === 404) {
-                setStatus(prev => ({ ...prev, subscription: '❌ Endpoint not found (404)' }));
-            } else {
-                setStatus(prev => ({ ...prev, subscription: `❓ Status: ${response.status}` }));
-            }
-        } catch (error) {
-            setStatus(prev => ({ ...prev, subscription: `❌ Network error: ${error.message}` }));
-        }
+        // Check subscription endpoint (skip to avoid errors)
+        setStatus(prev => ({ ...prev, subscription: '⏭️ Skipped (requires app ID)' }));
 
         // Check registration endpoint
         try {

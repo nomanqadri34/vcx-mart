@@ -173,8 +173,8 @@ export const adminAPI = {
 
 // Subscription API functions
 export const subscriptionAPI = {
-    createRegistrationOrder: (applicationId) => apiResponse(() => api.post('/subscription/registration/create', { applicationId })),
-    verifyRegistrationPayment: (paymentData) => apiResponse(() => api.post('/subscription/registration/verify', paymentData)),
+    createRegistrationOrder: (applicationId) => apiResponse(() => api.post('/payment/create-registration-order', { applicationId })),
+    verifyRegistrationPayment: (paymentData) => apiResponse(() => api.post('/payment/verify-registration', paymentData)),
     createSubscription: (applicationId) => apiResponse(() => api.post('/subscription/create', { applicationId })),
     getSubscriptionStatus: (applicationId) => apiResponse(() => api.get(`/subscription/status/${applicationId}`)),
     refreshSubscription: (applicationId) => apiResponse(() => api.post(`/subscription/refresh/${applicationId}`)),

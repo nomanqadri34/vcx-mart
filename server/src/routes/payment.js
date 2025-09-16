@@ -186,6 +186,96 @@ router.post('/verify-seller-registration', auth, async (req, res) => {
   });
 });
 
+// @route   POST /api/v1/payment/create-registration-order
+// @desc    Create Razorpay order for registration fee
+// @access  Private
+router.post('/create-registration-order', auth, async (req, res) => {
+  try {
+    const { amount = 50, currency = 'INR', affiliateCode } = req.body;
+
+    if (!razorpay) {
+      return res.status(500).json({ success: false, error: { message: 'Payment gateway not available' } });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // Convert to paise
+      currency,
+      receipt: `reg_${Date.now().toString().slice(-8)}_${req.user._id.toString().slice(-8)}`,
+      notes: {
+        userId: req.user._id.toString(),
+        userEmail: req.user.email,
+        affiliateCode: affiliateCode || '',
+        type: 'registration_fee'
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        orderId: order.id,
+        amount: order.amount / 100,
+        currency: order.currency,
+        key: process.env.RAZORPAY_KEY_ID
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration order error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Failed to create registration order' }
+    });
+  }
+});
+
+// @route   POST /api/v1/payment/verify-registration
+// @desc    Verify Razorpay payment for registration fee
+// @access  Private
+router.post('/verify-registration', auth, async (req, res) => {
+  try {
+    const { paymentId, orderId, signature } = req.body;
+
+    if (!paymentId || !orderId || !signature) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Missing payment verification data' }
+      });
+    }
+
+    // Verify signature
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid payment signature' }
+      });
+    }
+
+    // Payment verified successfully
+    res.json({
+      success: true,
+      message: 'Registration payment verified successfully',
+      data: {
+        paymentId,
+        orderId,
+        verified: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: error.message || 'Payment verification failed' }
+    });
+  }
+});
+
 // @route   POST /api/v1/payment/webhook
 // @desc    Handle Razorpay webhooks
 // @access  Public

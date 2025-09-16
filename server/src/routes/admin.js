@@ -227,6 +227,97 @@ router.get('/dashboard/activities', auth, requireAdmin, async (req, res) => {
     }
 });
 
+// Product Management Routes
+
+// Get all products for admin
+router.get('/products', auth, requireAdmin, async (req, res) => {
+    try {
+        const { page = 1, limit = 10, status, search, category } = req.query;
+
+        const query = {};
+
+        // Filter by status
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        // Search functionality
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { sku: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Filter by category
+        if (category) {
+            query.category = category;
+        }
+
+        const products = await Product.find(query)
+            .populate('seller', 'firstName lastName businessName')
+            .populate('category', 'name')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Product.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                products,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get admin products error:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                message: 'Failed to fetch products',
+                details: error.message
+            }
+        });
+    }
+});
+
+// Update product status
+router.put('/products/:id/status', auth, requireAdmin, async (req, res) => {
+    try {
+        const { status } = req.body;
+        
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: { message: 'Product not found' }
+            });
+        }
+
+        product.status = status;
+        await product.save();
+
+        res.json({
+            success: true,
+            message: 'Product status updated successfully',
+            data: { product }
+        });
+    } catch (error) {
+        console.error('Update product status error:', error);
+        res.status(500).json({
+            success: false,
+            error: { message: 'Failed to update product status' }
+        });
+    }
+});
+
 // Seller Management Routes
 
 // Get seller application stats

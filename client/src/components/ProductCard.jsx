@@ -64,7 +64,7 @@ const ProductCard = ({ product, showDiscount = false, variant = 'default' }) => 
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <span className="text-lg font-bold text-gray-900">
-              ₹{(product.discountedPrice || originalPrice).toLocaleString()}
+              ₹{(product.discountedPrice && product.discountedPrice < originalPrice ? product.discountedPrice : originalPrice).toLocaleString()}
             </span>
             {product.discountedPrice && product.discountedPrice < originalPrice && (
               <span className="text-sm text-gray-500 line-through">
