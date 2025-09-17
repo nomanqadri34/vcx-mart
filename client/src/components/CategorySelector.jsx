@@ -28,10 +28,11 @@ const CategorySelector = ({
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/categories/tree");
-      setCategories(response.data.data.categories);
+      const response = await api.get("/categories?level=1");
+      setCategories(response.data.data.categories || []);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,7 @@ const CategorySelector = ({
   };
 
   const renderCategoryTree = (categories, level = 0) => {
+    if (!categories || !Array.isArray(categories)) return [];
     return categories.map((category) => (
       <div key={category._id}>
         <div
@@ -71,7 +73,7 @@ const CategorySelector = ({
           onClick={() => handleCategorySelect(category)}
         >
           <div className="flex items-center space-x-2">
-            {category.children && category.children.length > 0 ? (
+            {category.children && Array.isArray(category.children) && category.children.length > 0 ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -101,6 +103,7 @@ const CategorySelector = ({
 
         {expandedCategories.has(category._id) &&
           category.children &&
+          Array.isArray(category.children) &&
           category.children.length > 0 && (
             <div>{renderCategoryTree(category.children, level + 1)}</div>
           )}
@@ -152,7 +155,7 @@ const CategorySelector = ({
 
         {showDropdown && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {categories.length === 0 ? (
+            {!categories || categories.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 <FolderIcon className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                 <p>No categories available</p>

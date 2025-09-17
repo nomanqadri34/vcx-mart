@@ -88,20 +88,14 @@ const AddProduct = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get("/categories");
-      setCategories(response.data.data.categories);
-      setCategoriesCount(response.data.data.categories.length);
+      const response = await api.get("/categories/tree");
+      const allCategories = response.data.data || [];
+      setCategories(allCategories);
+      setCategoriesCount(allCategories.length);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
-      // Fallback to mock data if API fails
-      setCategories([
-        { _id: "1", name: "Electronics" },
-        { _id: "2", name: "Fashion" },
-        { _id: "3", name: "Home & Garden" },
-        { _id: "4", name: "Sports" },
-        { _id: "5", name: "Books" },
-      ]);
-      setCategoriesCount(5);
+      setCategories([]);
+      setCategoriesCount(0);
     }
   };
 
@@ -292,7 +286,7 @@ const AddProduct = () => {
                 <CategorySelector
                   selectedCategory={selectedCategory}
                   onCategorySelect={handleCategorySelect}
-                  allowCreate={true}
+                  allowCreate={false}
                   className="w-full"
                 />
                 {!selectedCategory && (

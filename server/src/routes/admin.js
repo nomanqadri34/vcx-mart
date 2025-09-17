@@ -236,59 +236,90 @@ router.get('/products', auth, requireAdmin, async (req, res) => {
 
         const query = {};
 
-        // Filter by status
         if (status && status !== 'all') {
             query.status = status;
         }
 
-        // Search functionality
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } },
-                { sku: { $regex: search, $options: 'i' } }
+                { description: { $regex: search, $options: 'i' } }
             ];
         }
 
-        // Filter by category
         if (category) {
             query.category = category;
         }
 
         const products = await Product.find(query)
-            .populate('seller', 'firstName lastName businessName')
+            .populate('seller', 'firstName lastName')
             .populate('category', 'name')
             .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .lean();
 
         const total = await Product.countDocuments(query);
+
+        // Add businessName from SellerApplication
+        for (let product of products) {
+            if (product.seller) {
+                try {
+                    const sellerApp = await SellerApplication.findOne({ userId: product.seller._id }).lean();
+                    product.seller.businessName = sellerApp?.businessName || 'N/A';
+                } catch (err) {
+                    product.seller.businessName = 'N/A';
+                }
+            }
+        }
 
         res.json({
             success: true,
             data: {
                 products,
-                pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total,
-                    pages: Math.ceil(total / limit)
-                }
+                totalPages: Math.ceil(total / parseInt(limit))
             }
         });
     } catch (error) {
-        console.error('Get admin products error:', error);
+        console.error('Admin products error:', error);
         res.status(500).json({
             success: false,
-            error: {
-                message: 'Failed to fetch products',
-                details: error.message
-            }
+            error: { message: 'Failed to fetch products' }
         });
     }
 });
 
 // Update product status
+router.patch('/products/:id/status', auth, requireAdmin, async (req, res) => {
+    try {
+        const { status } = req.body;
+        
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: { message: 'Product not found' }
+            });
+        }
+
+        product.status = status;
+        await product.save();
+
+        res.json({
+            success: true,
+            message: 'Product status updated successfully',
+            data: { product }
+        });
+    } catch (error) {
+        console.error('Update product status error:', error);
+        res.status(500).json({
+            success: false,
+            error: { message: 'Failed to update product status' }
+        });
+    }
+});
+
+// Update product status (PUT method for compatibility)
 router.put('/products/:id/status', auth, requireAdmin, async (req, res) => {
     try {
         const { status } = req.body;
@@ -314,6 +345,32 @@ router.put('/products/:id/status', auth, requireAdmin, async (req, res) => {
         res.status(500).json({
             success: false,
             error: { message: 'Failed to update product status' }
+        });
+    }
+});
+
+// Delete product
+router.delete('/products/:id', auth, requireAdmin, async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: { message: 'Product not found' }
+            });
+        }
+
+        await Product.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete product error:', error);
+        res.status(500).json({
+            success: false,
+            error: { message: 'Failed to delete product' }
         });
     }
 });

@@ -39,6 +39,40 @@ router.get('/main', auth, async (req, res) => {
     }
 });
 
+// @route   GET /api/v1/categories/admin-main
+// @desc    Get main categories created by admin only (for homepage)
+// @access  Public
+router.get('/admin-main', async (req, res) => {
+    try {
+        // First get admin users
+        const User = require('../models/User');
+        const adminUsers = await User.find({ role: 'admin' }).select('_id');
+        const adminIds = adminUsers.map(admin => admin._id);
+
+        // Then get categories created by admins (latest first)
+        const adminCategories = await Category.find({ 
+            level: 0, 
+            isActive: true,
+            createdBy: { $in: adminIds }
+        })
+        .select('_id name description image isFeatured createdAt')
+        .sort({ createdAt: -1 })
+        .lean();
+
+        res.json({
+            success: true,
+            data: { categories: adminCategories }
+        });
+
+    } catch (error) {
+        logger.error('Get admin main categories error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: { message: 'Failed to fetch admin categories' }
+        });
+    }
+});
+
 // @route   GET /api/v1/categories
 // @desc    Get all categories
 // @access  Public
@@ -62,12 +96,18 @@ router.get('/', async (req, res) => {
 
         const categories = await Category.find(query)
             .populate('parent', 'name slug')
+            .populate('createdBy', 'role')
             .sort({ order: 1, name: 1 })
             .lean();
 
+        // Filter to only show admin-created categories for level=0 queries
+        const filteredCategories = level === '0' ? 
+            categories.filter(cat => cat.createdBy?.role === 'admin') : 
+            categories;
+
         res.json({
             success: true,
-            data: { categories }
+            data: { categories: filteredCategories }
         });
 
     } catch (error) {
@@ -138,6 +178,12 @@ router.get('/:id', async (req, res) => {
 // @access  Private (Admin for main categories, Seller for subcategories)
 router.post('/', auth, async (req, res) => {
     try {
+        logger.info('Category creation request:', {
+            userId: req.user?._id,
+            userRole: req.user?.role,
+            body: req.body
+        });
+
         const {
             name,
             description,
@@ -190,6 +236,14 @@ router.post('/', auth, async (req, res) => {
             }
         }
 
+        // Ensure we have a valid user ID
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({
+                success: false,
+                error: { message: 'User authentication failed. Please login again.' }
+            });
+        }
+
         const categoryData = {
             name,
             description,
@@ -199,7 +253,7 @@ router.post('/', auth, async (req, res) => {
             metaTitle,
             metaDescription,
             image: image || null,
-            createdBy: req.user._id || req.user.id
+            createdBy: req.user._id
         };
 
         // Only add commission if user is admin and commission is provided
@@ -207,18 +261,41 @@ router.post('/', auth, async (req, res) => {
             categoryData.commission = commission;
         }
 
+        logger.info('Creating category with data:', categoryData);
+        
         const category = new Category(categoryData);
-
         await category.save();
+        
+        logger.info('Category created successfully:', { categoryId: category._id, name: category.name });
 
         res.status(201).json({
             success: true,
             message: 'Category created successfully',
-            data: { category: category.toObject() }
+            data: { 
+                category: {
+                    _id: category._id,
+                    name: category.name,
+                    description: category.description,
+                    slug: category.slug,
+                    level: category.level,
+                    parent: category.parent,
+                    isFeatured: category.isFeatured,
+                    isActive: category.isActive,
+                    createdAt: category.createdAt
+                }
+            }
         });
 
     } catch (error) {
-        logger.error('Create category error:', error.message);
+        logger.error('Create category error:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            code: error.code,
+            userId: req.user?._id,
+            userRole: req.user?.role,
+            requestBody: req.body
+        });
 
         // Handle validation errors
         if (error.name === 'ValidationError') {

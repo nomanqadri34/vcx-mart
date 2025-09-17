@@ -240,7 +240,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
           <Link
             to="/admin/seller-management"
             className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-saffron-500"
@@ -258,7 +258,22 @@ const AdminDashboard = () => {
             </div>
           </Link>
 
-
+          <Link
+            to="/admin/product-management"
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-blue-500"
+          >
+            <div className="flex items-center">
+              <ShoppingBagIcon className="h-8 w-8 text-blue-500" />
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Product Management
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Moderate products & inventory
+                </p>
+              </div>
+            </div>
+          </Link>
 
           <Link
             to="/admin/orders"
@@ -277,7 +292,22 @@ const AdminDashboard = () => {
             </div>
           </Link>
 
-
+          <Link
+            to="/admin/category-management"
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-l-4 border-purple-500"
+          >
+            <div className="flex items-center">
+              <TagIcon className="h-8 w-8 text-purple-500" />
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Category Management
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Organize product categories
+                </p>
+              </div>
+            </div>
+          </Link>
 
           <Link
             to="/admin/user-management"

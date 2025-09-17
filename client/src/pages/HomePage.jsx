@@ -37,9 +37,9 @@ const HomePage = () => {
       );
       setFeaturedProducts(productsResponse.data.data.products);
 
-      // Fetch categories
-      const categoriesResponse = await api.get("/categories?limit=8");
-      setCategories(categoriesResponse.data.data.categories);
+      // Fetch latest categories created by admin only
+      const categoriesResponse = await api.get("/categories/admin-main");
+      setCategories(categoriesResponse.data.data.categories.slice(0, 8));
 
       // Fetch deals (products with discounts)
       const dealsResponse = await api.get(
@@ -77,7 +77,6 @@ const HomePage = () => {
   const getCategoryImage = (category) => {
     // First priority: Admin uploaded image
     if (category.image?.url) return category.image.url;
-    if (category.image && typeof category.image === 'string') return category.image;
     
     // Fallback to default images only if no admin image
     const categoryKey = category.name.toLowerCase();

@@ -8,9 +8,9 @@ import {
   PencilIcon,
   TrashIcon,
   FolderIcon,
+  XMarkIcon,
   TagIcon,
   PhotoIcon,
-  XMarkIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -40,7 +40,10 @@ const SellerCategoryManagement = () => {
       setLoading(true);
       const response = await api.get("/categories?level=1");
       const sellerCategories = response.data.data.categories.filter(
-        (cat) => cat.createdBy === user._id
+        (cat) => {
+          const createdBy = cat.createdBy?._id || cat.createdBy;
+          return createdBy === user._id;
+        }
       );
       setCategories(sellerCategories);
     } catch (error) {
@@ -66,9 +69,26 @@ const SellerCategoryManagement = () => {
     setSubmitting(true);
 
     try {
-      const categoryData = { ...formData };
+      const categoryData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        parent: formData.parent,
+        createdBy: user._id,
+        isActive: true,
+      };
 
-      // Add image data if uploaded
+      if (!categoryData.parent) {
+        toast.error("Please select a main category");
+        setSubmitting(false);
+        return;
+      }
+
+      if (!categoryData.name) {
+        toast.error("Please enter a category name");
+        setSubmitting(false);
+        return;
+      }
+
       if (uploadedImages.length > 0) {
         categoryData.image = {
           url: uploadedImages[0].url,
@@ -76,21 +96,59 @@ const SellerCategoryManagement = () => {
         };
       }
 
-      if (editingCategory) {
-        await api.put(`/categories/${editingCategory._id}`, categoryData);
-        toast.success("Category updated successfully!");
-      } else {
-        await api.post("/categories", categoryData);
-        toast.success("Category created successfully!");
-      }
+      try {
+        // First try to create/update
+        const response = editingCategory
+          ? await api.put(`/categories/${editingCategory._id}`, categoryData)
+          : await api.post("/categories", categoryData);
 
-      setShowModal(false);
-      setEditingCategory(null);
-      resetForm();
-      fetchCategories();
+        await fetchCategories();
+        toast.success(
+          editingCategory
+            ? "Category updated successfully!"
+            : "Category created successfully!"
+        );
+        setShowModal(false);
+        setEditingCategory(null);
+        resetForm();
+      } catch (apiError) {
+        console.error("API Error:", apiError);
+
+        // For 500 errors, check if the category was actually created
+        if (apiError.response?.status === 500) {
+          try {
+            // Give the server a moment to finish processing
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            // Check if the category exists
+            const check = await api.get("/categories?level=1");
+            const exists = check.data.data.categories.some(
+              (cat) =>
+                cat.name === categoryData.name && cat.createdBy === user._id
+            );
+
+            if (exists) {
+              await fetchCategories();
+              toast.success("Category was created successfully!");
+              setShowModal(false);
+              setEditingCategory(null);
+              resetForm();
+              return;
+            }
+          } catch (verifyError) {
+            console.error("Verification error:", verifyError);
+          }
+        }
+
+        // Show error message if we get here
+        toast.error(
+          apiError.response?.data?.message ||
+            "Failed to save category. Please try again."
+        );
+      }
     } catch (error) {
-      console.error("Failed to save category:", error);
-      toast.error("Failed to save category");
+      console.error("Error:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -153,26 +211,27 @@ const SellerCategoryManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 My Categories
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
                 Create and manage your product categories
               </p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link
                 to="/seller/products/add"
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="inline-flex items-center px-3 sm:px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Add Product
-                <ArrowRightIcon className="h-4 w-4 ml-2" />
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Add Product</span>
+                <span className="sm:hidden">Add</span>
+                <ArrowRightIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
               </Link>
               <button
                 onClick={() => {
@@ -180,10 +239,11 @@ const SellerCategoryManagement = () => {
                   resetForm();
                   setShowModal(true);
                 }}
-                className="inline-flex items-center px-4 py-2 bg-saffron-600 text-white rounded-lg hover:bg-saffron-700 transition-colors"
+                className="inline-flex items-center px-3 sm:px-4 py-2 text-sm bg-saffron-600 text-white rounded-lg hover:bg-saffron-700 transition-colors"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Create Subcategory
+                <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Create Subcategory</span>
+                <span className="sm:hidden">Create</span>
               </button>
             </div>
           </div>
@@ -191,32 +251,30 @@ const SellerCategoryManagement = () => {
 
         {/* Getting Started Guide */}
         {categories.length === 0 && !loading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <div className="flex items-start">
-              <FolderIcon className="h-8 w-8 text-blue-500 mt-1" />
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start">
+              <FolderIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 mb-3 sm:mb-0 sm:mt-1" />
+              <div className="sm:ml-4">
+                <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
                   Get Started with Categories
                 </h3>
-                <p className="text-blue-700 mb-4">
+                <p className="text-sm sm:text-base text-blue-700 mb-4">
                   Categories help organize your products and make them easier
                   for customers to find. Create categories first, then add
                   products to them.
                 </p>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={() => {
                       setEditingCategory(null);
                       resetForm();
                       setShowModal(true);
                     }}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center px-3 sm:px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <PlusIcon className="h-5 w-5 mr-2" />
+                    <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                     Create Your First Category
                   </button>
-                  <span className="text-blue-600">→</span>
-                  <span className="text-blue-700">Then add products to it</span>
                 </div>
               </div>
             </div>
@@ -236,63 +294,63 @@ const SellerCategoryManagement = () => {
               <p className="text-gray-600">No categories created yet</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-3 sm:p-6">
               {categories.map((category) => (
                 <div
                   key={category._id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                  className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                       {category.image?.url ? (
                         <img
                           src={category.image.url}
                           alt={category.name}
-                          className="w-12 h-12 object-cover rounded-lg"
+                          className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-saffron-100 rounded-lg flex items-center justify-center">
-                          <FolderIcon className="h-6 w-6 text-saffron-600" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-saffron-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FolderIcon className="h-5 w-5 sm:h-6 sm:w-6 text-saffron-600" />
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">
                           {category.name}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500">
                           {category.productCount || 0} products
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                       <button
                         onClick={() => handleEdit(category)}
-                        className="p-2 text-gray-400 hover:text-saffron-600 transition-colors"
+                        className="p-1.5 sm:p-2 text-gray-400 hover:text-saffron-600 transition-colors"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(category._id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 transition-colors"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                   </div>
 
                   {category.description && (
-                    <p className="text-gray-600 text-sm mb-4">
+                    <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
                       {category.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 text-xs sm:text-sm text-gray-500">
+                    <span className="truncate">
                       Created{" "}
                       {new Date(category.createdAt).toLocaleDateString()}
                     </span>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs ${
+                      className={`px-2 py-1 rounded-full text-xs self-start sm:self-auto ${
                         category.isActive
                           ? "bg-green-100 text-green-800"
                           : "bg-gray-100 text-gray-800"
@@ -309,112 +367,126 @@ const SellerCategoryManagement = () => {
 
         {/* Category Form Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-xs sm:max-w-md flex flex-col max-h-[90vh]">
+              <div className="flex-shrink-0 flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                   {editingCategory ? "Edit Category" : "Create New Category"}
                 </h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Main Category *
-                  </label>
-                  <select
-                    value={formData.parent}
-                    onChange={(e) =>
-                      setFormData({ ...formData, parent: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500"
-                    required
-                  >
-                    <option value="">Select main category</option>
-                    {mainCategories.map((mainCat) => (
-                      <option key={mainCat._id} value={mainCat._id}>
-                        {mainCat.name}
-                      </option>
-                    ))}
-                  </select>
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col min-h-0 flex-1"
+              >
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        Main Category *
+                      </label>
+                      <select
+                        value={formData.parent}
+                        onChange={(e) =>
+                          setFormData({ ...formData, parent: e.target.value })
+                        }
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500"
+                        required
+                      >
+                        <option value="">Select main category</option>
+                        {mainCategories.map((mainCat) => (
+                          <option key={mainCat._id} value={mainCat._id}>
+                            {mainCat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        Subcategory Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                        rows={2}
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500 resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        Category Image
+                      </label>
+                      <div className="h-[150px] border border-gray-200 rounded-md relative">
+                        <ImageUpload
+                          onUpload={handleImageUpload}
+                          multiple={false}
+                          folder="categories"
+                          existingImages={uploadedImages}
+                          className="w-full h-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subcategory Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-saffron-500 focus:border-saffron-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category Image
-                  </label>
-                  <ImageUpload
-                    onUpload={handleImageUpload}
-                    multiple={false}
-                    folder="categories"
-                    existingImages={uploadedImages}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-4 py-2 bg-saffron-600 text-white rounded-lg hover:bg-saffron-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>
-                          {editingCategory ? "Updating..." : "Creating..."}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span>
-                          {editingCategory ? "Update" : "Create"} Category
-                        </span>
-                      </>
-                    )}
-                  </button>
+                <div className="flex-shrink-0 border-t border-gray-200 p-3 sm:p-4 bg-white">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowModal(false)}
+                      className="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-saffron-600 text-white rounded-lg hover:bg-saffron-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {submitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                          <span>
+                            {editingCategory ? "Updating..." : "Creating..."}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            {editingCategory ? "Update" : "Create"} Category
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

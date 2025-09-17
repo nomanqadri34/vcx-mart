@@ -151,9 +151,10 @@ categorySchema.virtual('fullPath').get(function () {
   return this.ancestors.map(ancestor => ancestor.name).join(' > ') + ' > ' + this.name;
 });
 
-// Virtual for children count
+// Virtual for children count (async operation, use with caution)
 categorySchema.virtual('childrenCount').get(function () {
-  return this.model('Category').countDocuments({ parent: this._id });
+  // Return 0 for new documents or use the stored count
+  return this.productCount || 0;
 });
 
 // Virtual for is leaf (no children)
@@ -211,13 +212,18 @@ categorySchema.pre('save', async function (next) {
     return;
   }
 
-  // Update product count
-  const Product = mongoose.model('Product');
-  this.productCount = await Product.countDocuments({
-    category: this._id,
-    status: 'active',
-    isApproved: true
-  });
+  try {
+    // Update product count
+    const Product = mongoose.model('Product');
+    this.productCount = await Product.countDocuments({
+      category: this._id,
+      status: 'active',
+      isApproved: true
+    });
+  } catch (error) {
+    // If Product model doesn't exist or there's an error, just continue
+    console.warn('Could not update product count:', error.message);
+  }
 
   next();
 });
