@@ -109,13 +109,6 @@ const RegisterPage = () => {
       });
 
       if (result && result.success) {
-        // Automatically send verification OTP
-        try {
-          await resendVerification(data.email);
-        } catch (otpError) {
-          console.log('OTP send failed:', otpError);
-        }
-
         navigate("/verify-email", {
           state: {
             message: "Account created successfully! Please check your email for the verification code.",
