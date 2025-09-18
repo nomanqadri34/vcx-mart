@@ -75,11 +75,11 @@ const HelpPage = () => {
             <PhoneIcon className="h-8 w-8 text-saffron-600 mx-auto mb-3" />
             <h3 className="font-semibold text-gray-900 mb-2">Call Us</h3>
             <p className="text-gray-600 text-sm mb-3">Mon-Fri 9AM-6PM</p>
-            <a href="tel:+911234567890" className="text-saffron-600 font-medium">
-              +91 123 456 7890
+            <a href="tel:+919390817001" className="text-saffron-600 font-medium">
+              +91 9390817001
             </a>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-md text-center">
             <EnvelopeIcon className="h-8 w-8 text-saffron-600 mx-auto mb-3" />
             <h3 className="font-semibold text-gray-900 mb-2">Email Us</h3>
@@ -88,7 +88,7 @@ const HelpPage = () => {
               teamvtcx@gmail.com
             </a>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-md text-center">
             <ChatBubbleLeftRightIcon className="h-8 w-8 text-saffron-600 mx-auto mb-3" />
             <h3 className="font-semibold text-gray-900 mb-2">Live Chat</h3>
@@ -142,7 +142,7 @@ const HelpPage = () => {
                 You can track your order by logging into your account and visiting the "My Orders" section, or by using the tracking number sent to your email.
               </p>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">
                 What is your return policy?
@@ -151,7 +151,7 @@ const HelpPage = () => {
                 We offer a 30-day return policy for most items. Products must be in original condition with tags attached.
               </p>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">
                 How long does shipping take?

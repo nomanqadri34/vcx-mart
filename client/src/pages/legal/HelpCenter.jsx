@@ -79,7 +79,7 @@ const HelpCenter = () => {
   const filteredFaqs = faqs.map(category => ({
     ...category,
     questions: category.questions.filter(
-      faq => 
+      faq =>
         faq.q.toLowerCase().includes(searchTerm.toLowerCase()) ||
         faq.a.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -123,10 +123,9 @@ const HelpCenter = () => {
                           className="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-gray-50"
                         >
                           <span className="font-medium text-gray-900">{faq.q}</span>
-                          <ChevronDownIcon 
-                            className={`h-5 w-5 text-gray-500 transform transition-transform ${
-                              openFaq === faqId ? 'rotate-180' : ''
-                            }`}
+                          <ChevronDownIcon
+                            className={`h-5 w-5 text-gray-500 transform transition-transform ${openFaq === faqId ? 'rotate-180' : ''
+                              }`}
                           />
                         </button>
                         {openFaq === faqId && (
@@ -155,10 +154,10 @@ const HelpCenter = () => {
               Email Support
             </a>
             <a
-              href="/contact"
+              href="tel:+919390817001"
               className="inline-block border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-saffron-600 transition-colors"
             >
-              Contact Support
+              Call Us: +91 9390817001
             </a>
           </div>
         </div>
