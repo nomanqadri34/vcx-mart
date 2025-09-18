@@ -178,6 +178,40 @@ class RazorpayService {
     };
   }
 
+  // Create order for cart checkout
+  async createOrder(orderData) {
+    try {
+      const order = await razorpay.orders.create({
+        amount: orderData.total * 100, // Convert to paise
+        currency: 'INR',
+        receipt: orderData.orderNumber,
+        notes: {
+          order_number: orderData.orderNumber,
+          customer_id: orderData.userId,
+          customer_name: `${orderData.customer.firstName} ${orderData.customer.lastName}`,
+          customer_email: orderData.customer.email
+        }
+      });
+
+      return {
+        success: true,
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          keyId: process.env.RAZORPAY_KEY_ID,
+          customerInfo: orderData.customer,
+          testMode: process.env.NODE_ENV !== 'production'
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to create order: ${error.message}`
+      };
+    }
+  }
+
   // Get plans (alias for getPricing)
   getPlans() {
     return this.getPricing().subscription;

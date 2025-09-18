@@ -227,15 +227,106 @@ router.get('/my-orders', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/orders/user
+// @desc    Get current user's orders (alternative endpoint)
+// @access  Private
+router.get('/user', auth, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
+
+    const query = { customer: req.user._id };
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (search) {
+      query.orderNumber = { $regex: search, $options: 'i' };
+    }
+
+    // Get orders without pagination first to handle empty database
+    const totalOrders = await Order.countDocuments(query);
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .populate('items.product', 'name images category')
+      .populate('items.seller', 'name email')
+      .lean();
+
+    // Transform orders for frontend compatibility
+    const transformedOrders = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt || order.placedAt,
+      status: order.status,
+      total: order.total,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      tax: order.tax,
+      discount: order.discount,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      items: (order.items || []).map(item => ({
+        _id: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal,
+        image: item.image,
+        product: {
+          _id: item.product?._id || item.product,
+          name: item.product?.name || item.name
+        },
+        variants: item.variants || {}
+      })),
+      shipping: order.shipping || {},
+      shippingAddress: order.shippingAddress || {}
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        orders: transformedOrders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalOrders / parseInt(limit)),
+          totalOrders,
+          hasNext: page * limit < totalOrders,
+          hasPrev: page > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get user orders error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to get orders' }
+    });
+  }
+});
+
 // @route   GET /api/v1/orders/:id
 // @desc    Get specific order details
 // @access  Private
 router.get('/:id', auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
+    const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id || id.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(id)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid order ID format' }
+      });
+    }
+
+    const order = await Order.findById(id)
       .populate('customer', 'name email phone')
       .populate('items.product', 'name images category description')
-      .populate('items.seller', 'name email phone');
+      .populate('items.seller', 'name email phone')
+      .lean();
 
     if (!order) {
       return res.status(404).json({
@@ -256,9 +347,46 @@ router.get('/:id', auth, async (req, res) => {
       });
     }
 
+    // Transform order data for frontend
+    const transformedOrder = {
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt || order.placedAt,
+      status: order.status,
+      total: order.total,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      tax: order.tax,
+      discount: order.discount,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      customer: order.customer,
+      items: (order.items || []).map(item => ({
+        _id: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.subtotal,
+        image: item.image,
+        product: {
+          _id: item.product?._id || item.product,
+          name: item.product?.name || item.name,
+          images: item.product?.images,
+          category: item.product?.category,
+          description: item.product?.description
+        },
+        seller: item.seller,
+        variants: item.variants || {}
+      })),
+      shipping: order.shipping || {},
+      shippingAddress: order.shippingAddress || {},
+      billingAddress: order.billingAddress || {},
+      customerNotes: order.customerNotes
+    };
+
     res.json({
       success: true,
-      data: { order }
+      data: { order: transformedOrder }
     });
 
   } catch (error) {

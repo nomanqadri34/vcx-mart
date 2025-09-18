@@ -30,17 +30,19 @@ const MyOrders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/orders/my-orders', {
+      const response = await api.get('/orders/user', {
         params: {
           page: currentPage,
           limit: 10,
-          status: filter
+          status: filter !== 'all' ? filter : undefined
         }
       });
 
+      console.log('Orders API response:', response.data);
+
       if (response.data.success) {
-        setOrders(response.data.data.docs);
-        setTotalPages(response.data.data.totalPages);
+        setOrders(response.data.data.orders || []);
+        setTotalPages(response.data.data.pagination?.totalPages || 1);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -248,8 +250,8 @@ const MyOrders = () => {
                       </div>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-base sm:text-lg font-semibold text-gray-900">₹{order.total}</p>
-                      <p className="text-xs sm:text-sm text-gray-500">{order.items.length} item(s)</p>
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">₹{order.total || 0}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">{order.items?.length || 0} item(s)</p>
                     </div>
                   </div>
                 </div>
@@ -257,7 +259,7 @@ const MyOrders = () => {
                 {/* Order Items */}
                 <div className="px-4 sm:px-6 py-4">
                   <div className="space-y-4">
-                    {order.items.slice(0, 2).map((item, index) => (
+                    {(order.items || []).slice(0, 2).map((item, index) => (
                       <div key={index} className="flex items-start sm:items-center space-x-3 sm:space-x-4">
                         <div className="flex-shrink-0">
                           <img
@@ -290,9 +292,9 @@ const MyOrders = () => {
                         </div>
                       </div>
                     ))}
-                    {order.items.length > 2 && (
+                    {(order.items?.length || 0) > 2 && (
                       <p className="text-xs sm:text-sm text-gray-500 text-center">
-                        +{order.items.length - 2} more item(s)
+                        +{(order.items?.length || 0) - 2} more item(s)
                       </p>
                     )}
                   </div>
@@ -302,14 +304,6 @@ const MyOrders = () => {
                 <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                     <div className="flex flex-wrap gap-2 sm:space-x-3">
-                      <Link
-                        to={`/user/orders/${order._id}`}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs sm:text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                      >
-                        <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">View Details</span>
-                        <span className="sm:hidden">Details</span>
-                      </Link>
                       {order.shipping?.trackingNumber && (
                         <Link
                           to={`/orders/${order._id}/track`}
@@ -338,7 +332,7 @@ const MyOrders = () => {
                             <span className="hidden sm:inline">Return/Exchange</span>
                             <span className="sm:hidden">Return</span>
                           </button>
-                          {order.items.slice(0, 1).map((item, idx) => (
+                          {(order.items || []).slice(0, 1).map((item, idx) => (
                             <button
                               key={idx}
                               onClick={() => openReviewModal(item)}

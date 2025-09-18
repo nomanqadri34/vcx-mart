@@ -326,8 +326,8 @@ function App() {
                                   element={<AddProduct />}
                                 />
                                 <Route
-                                  path="products/:productId/edit"
-                                  element={<EditProduct />}
+                                  path="products/edit/:productId"
+                                  element={<AddProduct />}
                                 />
                                 <Route
                                   path="categories"

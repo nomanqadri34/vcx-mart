@@ -413,12 +413,12 @@ const ProductManagement = () => {
                             >
                               <EyeIcon className="h-4 w-4" />
                             </Link>
-                            <Link
-                              to={`/seller/edit-product/${product._id}`}
+                            <button
+                              onClick={() => navigate(`/seller/products/edit/${product._id}`)}
                               className="text-saffron-600 hover:text-saffron-900"
                             >
                               <PencilIcon className="h-4 w-4" />
-                            </Link>
+                            </button>
 
                             {/* Status Toggle - More prominent buttons */}
                             <div className="flex items-center space-x-1">

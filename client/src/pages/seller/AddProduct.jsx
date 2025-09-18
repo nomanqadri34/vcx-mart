@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import {
   PhotoIcon,
   XMarkIcon,
@@ -31,6 +31,7 @@ const useDebounce = (value, delay) => {
 };
 
 const AddProduct = () => {
+  const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -42,9 +43,12 @@ const AddProduct = () => {
   const [productInfo, setProductInfo] = useState([]);
   const [productDetailsCustomFields, setProductDetailsCustomFields] = useState([]);
   const [dynamicProductDetails, setDynamicProductDetails] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { productId } = useParams();
+  const isEditing = !!productId;
 
   const {
     register,
@@ -52,41 +56,13 @@ const AddProduct = () => {
     formState: { errors },
     watch,
     setValue,
+    reset,
   } = useForm();
 
   const watchedName = watch("name");
 
-  useEffect(() => {
-    // Check authentication
-    if (!isAuthenticated) {
-      toast.error("Please log in to access this page");
-      navigate("/login");
-      return;
-    }
-
-    // Check if user is a seller
-    if (user && user.role !== "seller" && user.role !== "admin") {
-      toast.error("You need to be a seller to access this page");
-      navigate("/seller/become-seller");
-      return;
-    }
-
-    fetchCategories();
-  }, [isAuthenticated, user, navigate]);
-
-  // Show loading state while checking authentication
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-saffron-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const fetchCategories = async () => {
+  // Define functions before useEffect to avoid hoisting issues
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await api.get("/categories/tree");
       const allCategories = response.data.data || [];
@@ -97,7 +73,164 @@ const AddProduct = () => {
       setCategories([]);
       setCategoriesCount(0);
     }
-  };
+  }, []);
+
+  const loadProduct = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Loading product with ID:', productId);
+
+      if (!productId) {
+        console.error('❌ No product ID provided');
+        toast.error('No product ID provided');
+        navigate('/seller/products');
+        return;
+      }
+
+      if (productId.length !== 24) {
+        console.warn(`⚠️ Product ID has ${productId.length} characters instead of 24:`, productId);
+        // Continue anyway to see what happens
+      }
+
+      console.log('📡 Making API call to /products/' + productId);
+      const response = await api.get(`/products/${productId}`);
+      console.log('📦 API Response:', response.data);
+
+      const product = response.data.data?.product || response.data.data || response.data;
+      console.log('🎯 Extracted product:', product);
+
+      if (!product) {
+        console.error('❌ No product data found');
+        toast.error('Product not found');
+        navigate('/seller/products');
+        return;
+      }
+
+      console.log('✅ Product loaded successfully, resetting form with:', {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        status: product.status
+      });
+
+      reset({
+        name: product.name || '',
+        description: product.description || '',
+        shortDescription: product.shortDescription || '',
+        brand: product.brand || '',
+        price: product.price || 0,
+        discountedPrice: product.discountedPrice || '',
+        status: product.status || 'draft',
+        isAccessory: product.isAccessory || false,
+        weight: product.weight || '',
+        lowStockThreshold: product.lowStockThreshold || 10,
+        metaTitle: product.metaTitle || '',
+        metaDescription: product.metaDescription || ''
+      });
+
+      if (product.category) {
+        console.log('🏷️ Setting category:', product.category);
+        setSelectedCategory(product.category);
+      }
+      if (product.images) {
+        console.log('🖼️ Setting images:', product.images);
+        setSelectedImages(product.images);
+      }
+      if (product.sizes) setSizes(product.sizes);
+      if (product.colors) setColors(product.colors);
+      if (product.keyHighlightsCustomFields) setKeyHighlights(product.keyHighlightsCustomFields);
+      if (product.productInformationCustomFields) setProductInfo(product.productInformationCustomFields);
+      if (product.dynamicProductDetails) setDynamicProductDetails(product.dynamicProductDetails);
+
+      console.log('✅ Product data loaded and form populated');
+
+    } catch (error) {
+      console.error('❌ Failed to load product:', error);
+      console.error('Error details:', error.response?.data);
+
+      if (error.response?.status === 404) {
+        toast.error('Product not found');
+      } else if (error.response?.status === 400) {
+        toast.error('Invalid product ID format');
+      } else {
+        toast.error('Failed to load product data');
+      }
+
+      // Don't navigate away immediately, show error state
+      setLoading(false);
+      return;
+    } finally {
+      setLoading(false);
+    }
+  }, [productId, navigate, reset]);
+
+  useEffect(() => {
+    console.log('🔄 useEffect triggered with:', {
+      isAuthenticated,
+      user: !!user,
+      isEditing,
+      productId,
+      userRole: user?.role
+    });
+
+    // Check authentication
+    if (!isAuthenticated) {
+      console.log('❌ Not authenticated, redirecting to login');
+      toast.error("Please log in to access this page");
+      navigate("/login");
+      return;
+    }
+
+    // Check if user is a seller
+    if (user && user.role !== "seller" && user.role !== "admin") {
+      console.log('❌ User is not a seller, redirecting');
+      toast.error("You need to be a seller to access this page");
+      navigate("/seller/become-seller");
+      return;
+    }
+
+    console.log('✅ Authentication checks passed');
+
+    fetchCategories();
+
+    if (isEditing) {
+      console.log('📝 In editing mode, calling loadProduct()');
+      loadProduct();
+    } else {
+      console.log('➕ In add mode, not loading product');
+      setLoading(false);
+    }
+  }, [isAuthenticated, user, navigate, isEditing, productId, fetchCategories, loadProduct]);
+
+  // Show loading state while checking authentication or loading product
+  if (!isAuthenticated || !user || (isEditing && loading)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-saffron-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {isEditing && loading ? "Loading product data..." : "Loading..."}
+          </p>
+          {isEditing && (
+            <p className="text-xs text-gray-400 mt-2">
+              Product ID: {productId}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Debug: Show what's happening
+  console.log('🔍 AddProduct render:', {
+    isAuthenticated,
+    user: !!user,
+    isEditing,
+    loading,
+    productId,
+    currentURL: window.location.href,
+    params: useParams()
+  });
 
   const onSubmit = async (data) => {
     if (selectedImages.length === 0) {
@@ -156,9 +289,11 @@ const AddProduct = () => {
 
       console.log("Sending product data:", productData);
 
-      const response = await api.post("/products", productData);
+      const response = isEditing
+        ? await api.put(`/products/${productId}`, productData)
+        : await api.post("/products", productData);
 
-      toast.success("Product created successfully!");
+      toast.success(isEditing ? "Product updated successfully!" : "Product created successfully!");
       navigate("/seller/products");
     } catch (error) {
       console.error("Product creation error:", error);
@@ -214,15 +349,48 @@ const AddProduct = () => {
     }
   };
 
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <strong className="font-bold">Error Loading Page</strong>
+            <p className="block sm:inline">{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-saffron-600 text-white px-4 py-2 rounded hover:bg-saffron-700 mr-2"
+          >
+            Reload Page
+          </button>
+          <button
+            onClick={() => navigate('/seller/products')}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          >
+            Back to Products
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-saffron-50 to-green-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isEditing ? "Edit Product" : "Add New Product"}
+          </h1>
           <p className="text-gray-600 mt-2">
-            Create a new product listing for your store
+            {isEditing ? "Update your product information" : "Create a new product listing for your store"}
           </p>
+          {isEditing && productId && (
+            <p className="text-xs text-gray-500 mt-1">
+              Product ID: {productId} ({productId.length} characters)
+            </p>
+          )}
         </div>
 
         {/* Category Reminder Banner */}
@@ -595,6 +763,7 @@ const AddProduct = () => {
                       <input
                         type="checkbox"
                         id={`size-${size}`}
+                        checked={sizes.some((s) => s.size === size)}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSizes([...sizes, { size, stock: 0 }]);
@@ -615,6 +784,7 @@ const AddProduct = () => {
                           type="number"
                           placeholder="Stock"
                           min="0"
+                          value={sizes.find((s) => s.size === size)?.stock || 0}
                           className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
                           onChange={(e) => {
                             setSizes(
@@ -910,16 +1080,16 @@ const AddProduct = () => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
               className="px-6 py-2 bg-saffron-600 text-white rounded-md hover:bg-saffron-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating...
+                  {isEditing ? "Updating..." : "Creating..."}
                 </div>
               ) : (
-                "Create Product"
+                isEditing ? "Update Product" : "Create Product"
               )}
             </button>
           </div>
