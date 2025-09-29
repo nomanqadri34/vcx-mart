@@ -153,7 +153,7 @@ class RazorpayService {
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(body.toString())
       .digest('hex');
-    
+
     return expectedSignature === signature;
   }
 
@@ -161,7 +161,7 @@ class RazorpayService {
   getPricing() {
     const currentDate = new Date();
     const launchDate = new Date('2025-10-01');
-    
+
     return {
       registration: PRICING.registration,
       subscription: {
@@ -201,7 +201,7 @@ class RazorpayService {
           currency: order.currency,
           keyId: process.env.RAZORPAY_KEY_ID,
           customerInfo: orderData.customer,
-          testMode: process.env.NODE_ENV !== 'production'
+          testMode: process.env.RAZORPAY_TEST_MODE === 'true'
         }
       };
     } catch (error) {
